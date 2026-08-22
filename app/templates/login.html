@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Inicio de Sesión - Cultivo de Lulo{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<!-- Esferas de luz neón de fondo -->
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+
+<!-- Canvas para partículas y líneas digitales -->
+<canvas id="bgCanvas"></canvas>
+
+<div class="container py-4">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
+    <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  <div class="login-split-wrapper">
+    <div class="login-card-container">
+      <div class="row g-0">
+
+        <!-- Columna Izquierda: Formularios Dinámicos (Login & Registro) -->
+        <div class="col-lg-6 login-form-side text-center">
+
+          <!-- 1. Panel Formulario de Inicio de Sesión -->
+          <div id="loginPanel" class="form-panel form-panel-centered {% if not show_register %}panel-visible{% else %}panel-hidden{% endif %}">
+            
+            <!-- Logo Insignia Centrado y Encabezado -->
+            <div class="mb-4 text-center">
+              <div class="brand-logo-badge mx-auto">
+                <i class="bi bi-tree-fill"></i>
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span class="fw-bold text-uppercase tracking-wider" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
+              </div>
+              <h1 class="login-title mb-2">Iniciar <span>Sesión</span></h1>
+              <p class="login-subtitle mb-0">Accede al sistema de contabilidad y control financiero de tu cultivo de lulo.</p>
+            </div>
+
+            <form method="post" action="{{ url_for('auth.login') }}" class="text-start">
+              <div class="mb-3">
+                <label for="nameUser" class="form-neon-label">
+                  <i class="bi bi-person me-1"></i> Usuario
+                </label>
+                <div class="input-group input-group-neon">
+                  <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                  <input type="text" name="nameUser" id="nameUser" class="form-control" placeholder="Ingresa tu usuario" required autocomplete="username">
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="passwordUser" class="form-neon-label">
+                  <i class="bi bi-lock me-1"></i> Contraseña
+                </label>
+                <div class="input-group input-group-neon">
+                  <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+                  <input type="password" name="passwordUser" id="passwordUser" class="form-control" placeholder="Ingresa tu contraseña" required autocomplete="current-password">
+                </div>
+              </div>
+
+              <div class="d-grid gap-3">
+                <button type="submit" class="btn btn-neon-primary py-3">
+                  <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                </button>
+                <button type="button" class="btn btn-neon-outline" onclick="switchForm('register')">
+                  <i class="bi bi-person-plus me-2"></i> Crear Cuenta Nueva
+                </button>
+              </div>
+            </form>
+
+            <div class="mt-4 pt-3 text-center border-top border-secondary border-opacity-25">
+              <small class="text-muted">
+                <i class="bi bi-shield-check me-1" style="color: var(--neon-green);"></i> Control Financiero Agrícola Seguro
+              </small>
+            </div>
+          </div>
+
+          <!-- 2. Panel Formulario de Registro (Crear Cuenta) -->
+          <div id="registerPanel" class="form-panel form-panel-centered {% if show_register %}panel-visible{% else %}panel-hidden{% endif %}">
+            
+            <!-- Logo Insignia Centrado y Encabezado -->
+            <div class="mb-3 text-center">
+              <div class="brand-logo-badge mx-auto">
+                <i class="bi bi-tree-fill"></i>
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span class="fw-bold text-uppercase tracking-wider" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
+              </div>
+              <h1 class="login-title mb-2">Crear <span>Cuenta</span></h1>
+              <p class="login-subtitle mb-2">Regístrate para llevar la contabilidad exacta de tu cultivo de lulo.</p>
+            </div>
+
+            <div id="registerError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
+
+            <form method="post" action="{{ url_for('user.add') }}" onsubmit="return validateRegister(event)" class="text-start">
+              <div class="mb-2">
+                <label for="regNameUser" class="form-neon-label">
+                  <i class="bi bi-person me-1"></i> Usuario
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                  <input type="text" name="nameUser" id="regNameUser" class="form-control" placeholder="Crea tu usuario" required autocomplete="username">
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <label for="regPasswordUser" class="form-neon-label">
+                  <i class="bi bi-lock me-1"></i> Contraseña
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+                  <input type="password" name="passwordUser" id="regPasswordUser" class="form-control" placeholder="Crea tu contraseña" required autocomplete="new-password">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-neon-label">
+                  <i class="bi bi-shield-lock me-1"></i> Confirmar Contraseña
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                  <input type="password" id="confirmPassword" class="form-control" placeholder="Repite tu contraseña" required autocomplete="new-password">
+                </div>
+              </div>
+
+              <div class="d-grid gap-2 mb-3">
+                <button type="submit" class="btn btn-neon-primary py-3">
+                  <i class="bi bi-person-check me-2"></i> Registrarse
+                </button>
+              </div>
+            </form>
+
+            <div class="text-center pt-2">
+              <span class="text-muted" style="font-size: 0.9rem;">¿Ya tienes una cuenta?</span>
+              <a href="javascript:void(0)" class="link-neon ms-2" onclick="switchForm('login')">
+                Iniciar sesión
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna Derecha: Sección Visual Cultivo de Lulo (Contabilidad de Dinero) -->
+        <div class="col-lg-6 login-visual-side">
+          <div class="login-visual-overlay"></div>
+          <div class="login-visual-content">
+            <div class="lulo-badge">
+              <i class="bi bi-currency-dollar"></i> Contabilidad del Cultivo
+            </div>
+            <h2 class="lulo-headline">Control Total de <span>Tu Dinero & Ganancias</span></h2>
+            <p class="lulo-description">
+              Gestiona la contabilidad exacta de tu cultivo de lulo: registra tus gastos de producción, ventas de cosecha e inversión financiera de forma rápida y clara.
+            </p>
+
+            <div class="lulo-features">
+              <div class="lulo-feature-item">
+                <i class="bi bi-cash-stack"></i>
+                <span>Ingresos y Gastos</span>
+              </div>
+              <div class="lulo-feature-item">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Rentabilidad</span>
+              </div>
+              <div class="lulo-feature-item">
+                <i class="bi bi-wallet2"></i>
+                <span>Balance Financiero</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script para Cambio de Formularios y Validación -->
+<script>
+  function switchForm(targetMode) {
+    const loginPanel = document.getElementById('loginPanel');
+    const registerPanel = document.getElementById('registerPanel');
+    const errorBox = document.getElementById('registerError');
+    if (errorBox) errorBox.classList.add('d-none');
+
+    if (targetMode === 'register') {
+      loginPanel.classList.remove('panel-visible');
+      loginPanel.classList.add('panel-hidden');
+      registerPanel.classList.remove('panel-hidden');
+      registerPanel.classList.add('panel-visible');
+    } else {
+      registerPanel.classList.remove('panel-visible');
+      registerPanel.classList.add('panel-hidden');
+      loginPanel.classList.remove('panel-hidden');
+      loginPanel.classList.add('panel-visible');
+    }
+  }
+
+  function validateRegister(event) {
+    const password = document.getElementById('regPasswordUser').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const errorBox = document.getElementById('registerError');
+
+    if (password !== confirm) {
+      event.preventDefault();
+      errorBox.textContent = 'Las contraseñas no coinciden. Por favor verifícalas.';
+      errorBox.classList.remove('d-none');
+      return false;
+    }
+    errorBox.classList.add('d-none');
+    return true;
+  }
+</script>
+
+<!-- Script de Animaciones de Fondo -->
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}

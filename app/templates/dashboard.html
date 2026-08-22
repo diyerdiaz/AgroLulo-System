@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Dashboard General - Cultivo de Lulo{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<!-- Esferas de luz neón de fondo -->
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+
+<!-- Canvas para partículas y líneas digitales -->
+<canvas id="bgCanvas"></canvas>
+
+<div class="dashboard-wrapper">
+  
+  <!-- Sidebar Lateral Izquierda Fija y Colapsable (Únicamente botón ☰ al estar cerrado) -->
+  <aside id="sidebarLulo" class="sidebar-lulo">
+    
+    <!-- Botón Principal de Menú (☰) -->
+    <div class="mb-2">
+      <button type="button" class="btn-toggle-menu" onclick="toggleSidebar()" aria-label="Alternar Menú">
+        <i class="bi bi-list"></i>
+        <span class="sidebar-nav-content fw-bold text-white fs-6">Menú</span>
+      </button>
+    </div>
+
+    <!-- Contenido Desplegable (Visibilidad exclusiva cuando el menú está abierto) -->
+    <div class="sidebar-nav-content d-flex flex-column h-100">
+      
+      <!-- Logotipo y Nombre del Sistema -->
+      <div class="text-center pb-3 my-2 border-bottom border-secondary border-opacity-25">
+        <div class="brand-logo-badge mx-auto mb-2" style="width: 44px; height: 44px; font-size: 1.2rem;">
+          <i class="bi bi-tree-fill"></i>
+        </div>
+        <div class="sidebar-brand-title">
+          AgroLulo <span>System</span>
+        </div>
+      </div>
+
+      <!-- Lista de 9 Opciones del Sistema con Insignias de Íconos Neón Estéticas -->
+      <ul class="sidebar-menu list-unstyled flex-grow-1">
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link active" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box">
+              <i class="bi bi-speedometer2"></i>
+            </div>
+            <span>Dashboard General</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-sprout-fill"></i>
+            </div>
+            <span>Cultivos</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-box-seam-fill"></i>
+            </div>
+            <span>Producción</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <span>Ingresos</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+              <i class="bi bi-dash-circle-fill"></i>
+            </div>
+            <span>Gastos</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box" style="color: #ffb703; border-color: rgba(255, 183, 3, 0.3);">
+              <i class="bi bi-bar-chart-line-fill"></i>
+            </div>
+            <span>Reportes</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('user.index') }}" class="sidebar-link" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box" style="color: #b5179e; border-color: rgba(181, 23, 158, 0.3);">
+              <i class="bi bi-person-badge-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link" onclick="selectMenuOption(this)">
+            <div class="nav-icon-box" style="color: #48cae4; border-color: rgba(72, 202, 228, 0.3);">
+              <i class="bi bi-gear-wide-connected"></i>
+            </div>
+            <span>Configuración</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Usuario & Logout en la parte inferior -->
+      <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+          <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
+          <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+            <i class="bi bi-box-arrow-right"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Área Principal de Contenido: Dashboard General -->
+  <main class="main-content-lulo">
+    
+    <!-- Encabezado Móvil para Pantallas Pequeñas -->
+    <div class="mobile-nav-header">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">System</span></span>
+      </div>
+      <span class="badge bg-dark border border-success text-success">
+        <i class="bi bi-person-circle me-1"></i> {{ current_user.nameUser }}
+      </span>
+    </div>
+
+    <!-- Encabezado de la Página -->
+    <div class="dash-card mb-4">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <div class="lulo-badge mb-2">
+            <i class="bi bi-bar-chart-fill"></i> Resumen Consolidado del Cultivo
+          </div>
+          <h1 class="fw-bold text-white mb-2 fs-2">
+            Dashboard <span>General</span>
+          </h1>
+          <p class="text-muted mb-0">
+            Vista general del estado de tus plantaciones, volumen de producción y métricas financieras de dinero en tiempo real.
+          </p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+          <span class="badge bg-dark border border-success text-success px-3 py-2 fs-6">
+            <i class="bi bi-circle-fill fs-6 me-1 text-success"></i> Sistema Operativo
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 1: OPERACIÓN Y PLANTACIONES (3 Indicadores) -->
+    <div class="mb-2">
+      <h5 class="fw-bold text-uppercase tracking-wider text-muted fs-6 mb-3">
+        <i class="bi bi-geo-alt-fill me-1" style="color: var(--neon-green);"></i> Estado General de Cultivos
+      </h5>
+    </div>
+
+    <div class="row g-4 mb-4">
+      
+      <!-- 1. Total de cultivos -->
+      <div class="col-lg-4 col-md-6">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="indicator-title">Total de Cultivos</div>
+              <div class="indicator-value">
+                <span class="counter-value" data-target="4">0</span>
+                <span class="fs-5 text-muted font-normal ms-1">Lotes</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge">
+              <i class="bi bi-sprout"></i>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+            <small class="text-muted">Lotes activos y en producción</small>
+            <span class="badge bg-success bg-opacity-25 text-success">100% Activo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Hectáreas totales -->
+      <div class="col-lg-4 col-md-6">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="indicator-title">Hectáreas Totales</div>
+              <div class="indicator-value">
+                <span class="counter-value" data-target="12.5" data-decimals="1">0</span>
+                <span class="fs-5 text-muted font-normal ms-1">Ha</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge" style="color: #ffb703; border-color: rgba(255, 183, 3, 0.4); background: rgba(255, 183, 3, 0.1);">
+              <i class="bi bi-landscape"></i>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+            <small class="text-muted">Superficie sembrada</small>
+            <small class="text-warning fw-semibold">3.1 Ha / Lote prom.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Total de plantas -->
+      <div class="col-lg-4 col-md-12">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <div class="indicator-title">Total de Plantas</div>
+              <div class="indicator-value">
+                <span class="counter-value" data-target="8500">0</span>
+                <span class="fs-5 text-muted font-normal ms-1">Mantas</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge">
+              <i class="bi bi-flower1"></i>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+            <small class="text-muted">Densidad óptima de siembra</small>
+            <small class="text-success fw-semibold">Salud 98.2%</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN 2: PRODUCCIÓN Y CONTABILIDAD FINANCIERA (4 Indicadores) -->
+    <div class="mb-2 pt-2">
+      <h5 class="fw-bold text-uppercase tracking-wider text-muted fs-6 mb-3">
+        <i class="bi bi-cash-coin me-1" style="color: var(--neon-green);"></i> Producción & Finanzas
+      </h5>
+    </div>
+
+    <div class="row g-4 mb-5">
+
+      <!-- 4. Producción total -->
+      <div class="col-xl-3 col-md-6">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+              <div class="indicator-title">Producción Total</div>
+              <div class="indicator-value">
+                <span class="counter-value" data-target="14250">0</span>
+                <span class="fs-6 text-muted font-normal ms-1">Kg</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.4); background: rgba(76, 201, 240, 0.1);">
+              <i class="bi bi-box-seam-fill"></i>
+            </div>
+          </div>
+          <div class="pt-2 border-top border-secondary border-opacity-25">
+            <small class="text-muted"><i class="bi bi-check2-circle text-info me-1"></i> Lulo Calidad Extra & Primera</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Ingresos totales -->
+      <div class="col-xl-3 col-md-6">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+              <div class="indicator-title">Ingresos Totales</div>
+              <div class="indicator-value">
+                <span class="counter-value" data-target="58450000" data-currency="true">$ 0</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+          </div>
+          <div class="pt-2 border-top border-secondary border-opacity-25">
+            <small class="text-success"><i class="bi bi-arrow-up-right me-1"></i> Ventas de fruta fresca</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Gastos totales -->
+      <div class="col-xl-3 col-md-6">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+              <div class="indicator-title">Gastos Totales</div>
+              <div class="indicator-value">
+                <span class="counter-value" data-target="19210000" data-currency="true">$ 0</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.1);">
+              <i class="bi bi-dash-circle-fill"></i>
+            </div>
+          </div>
+          <div class="pt-2 border-top border-secondary border-opacity-25">
+            <small class="text-danger"><i class="bi bi-arrow-down-right me-1"></i> Insumos, jornales & abonos</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Ganancias totales -->
+      <div class="col-xl-3 col-md-6">
+        <div class="indicator-card" style="border-color: var(--neon-green); box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+              <div class="indicator-title" style="color: var(--neon-green);">Ganancias Totales</div>
+              <div class="indicator-value highlight-green">
+                <span class="counter-value" data-target="39240000" data-currency="true">$ 0</span>
+              </div>
+            </div>
+            <div class="indicator-icon-badge" style="background: rgba(57, 255, 20, 0.2); box-shadow: 0 0 20px var(--neon-green-glow);">
+              <i class="bi bi-graph-up-arrow"></i>
+            </div>
+          </div>
+          <div class="pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+            <small class="text-white fw-bold">Utilidad Neta</small>
+            <span class="badge bg-success text-dark fw-bold">67.1% Rentabilidad</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN 3: ANÁLISIS GRÁFICO DEL CULTIVO (3 Gráficos Solicitados) -->
+    <div class="mb-2 pt-2">
+      <h5 class="fw-bold text-uppercase tracking-wider text-muted fs-6 mb-3">
+        <i class="bi bi-pie-chart-fill me-1" style="color: var(--neon-green);"></i> Análisis Gráfico & Estadísticas de Rendimiento
+      </h5>
+    </div>
+
+    <div class="row g-4 mb-4">
+      
+      <!-- GRÁFICO 1: Producción de todos los cultivos (Barras) -->
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="fw-bold text-white fs-6">
+              <i class="bi bi-bar-chart-line-fill me-2" style="color: var(--neon-green);"></i> 1. Producción por Cultivo (Kg)
+            </div>
+            <span class="badge bg-dark border border-secondary text-light">Barras</span>
+          </div>
+          <div class="chart-container-box">
+            <canvas id="chartProduccionBarras"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO 2: Gastos vs Inversión / Finanzas (Tipo Pastel / Dona) -->
+      <div class="col-lg-6">
+        <div class="chart-card">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="fw-bold text-white fs-6">
+              <i class="bi bi-pie-chart-fill me-2" style="color: #ffb703;"></i> 2. Gastos vs. Inversión & Utilidad
+            </div>
+            <span class="badge bg-dark border border-secondary text-light">Pastel</span>
+          </div>
+          <div class="chart-container-box">
+            <canvas id="chartGastosInversionPastel"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO 3: Producción por cultivo a través del tiempo (Líneas) -->
+      <div class="col-lg-12">
+        <div class="chart-card">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="fw-bold text-white fs-6">
+              <i class="bi bi-graph-up-arrow me-2" style="color: #4cc9f0;"></i> 3. Producción Histórica por Cultivo a Través del Tiempo
+            </div>
+            <span class="badge bg-dark border border-secondary text-light">Líneas Mensuales</span>
+          </div>
+          <div class="chart-container-box" style="height: 320px;">
+            <canvas id="chartProduccionLineas"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<!-- ÚNICO BOTÓN FLOTANTE DE RAYO PARA CAMBIAR TEMA DE COLOR (Abajo a la Derecha) -->
+<button type="button" id="btnThemeToggle" class="theme-lightning-btn" onclick="cycleThemeColor()" aria-label="Cambiar Tema de Color" title="Cambiar Tema de Color">
+  <i class="bi bi-lightning-charge-fill"></i>
+</button>
+
+<!-- Script de Chart.js Local -->
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+
+<!-- Lógica de Interactividad, Gráficos Chart.js, Cambiador de Tema y Animación de Contadores -->
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebarLulo');
+    sidebar.classList.toggle('expanded');
+  }
+
+  function selectMenuOption(element) {
+    document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+    element.classList.add('active');
+    
+    if (window.innerWidth <= 991.98) {
+      document.getElementById('sidebarLulo').classList.remove('expanded');
+    }
+  }
+
+  const themesSequence = ['green', 'blue', 'orange'];
+
+  function cycleThemeColor() {
+    const currentTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    const currentIndex = themesSequence.indexOf(currentTheme);
+    const nextIndex = (currentIndex + 1) % themesSequence.length;
+    const nextTheme = themesSequence[nextIndex];
+    setThemeColor(nextTheme);
+  }
+
+  // Instancias globales de Chart.js
+  let barChartInstance = null;
+  let pieChartInstance = null;
+  let lineChartInstance = null;
+
+  function getThemeColorsHex(themeName) {
+    if (themeName === 'blue') {
+      return { main: '#00f0ff', glow: 'rgba(0, 240, 255, 0.35)', fill: 'rgba(0, 240, 255, 0.15)' };
+    } else if (themeName === 'orange') {
+      return { main: '#ff8800', glow: 'rgba(255, 136, 0, 0.35)', fill: 'rgba(255, 136, 0, 0.15)' };
+    } else {
+      return { main: '#39ff14', glow: 'rgba(57, 255, 20, 0.35)', fill: 'rgba(57, 255, 20, 0.15)' };
+    }
+  }
+
+  // Inicializar o actualizar los 3 gráficos
+  function initDashboardCharts(themeName) {
+    const tc = getThemeColorsHex(themeName);
+    Chart.defaults.color = '#c0d8c7';
+    Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
+
+    // 1. GRÁFICO DE BARRAS: Producción por Cultivo (Kg)
+    const ctxBar = document.getElementById('chartProduccionBarras');
+    if (ctxBar) {
+      if (barChartInstance) barChartInstance.destroy();
+      barChartInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: ['Lote El Mirador', 'Lote San José', 'Lote La Esperanza', 'Lote La Pradera'],
+          datasets: [{
+            label: 'Producción (Kg)',
+            data: [4200, 3850, 3400, 2800],
+            backgroundColor: [tc.main, '#4cc9f0', '#ffb703', '#b5179e'],
+            borderColor: [tc.main, '#4cc9f0', '#ffb703', '#b5179e'],
+            borderWidth: 1.5,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(8, 12, 10, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#39ff14',
+              borderColor: tc.main,
+              borderWidth: 1
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // 2. GRÁFICO DE PASTEL: Gastos vs Inversión & Utilidad
+    const ctxPie = document.getElementById('chartGastosInversionPastel');
+    if (ctxPie) {
+      if (pieChartInstance) pieChartInstance.destroy();
+      pieChartInstance = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: ['Utilidad Neta (Ganancia)', 'Insumos & Fertilizantes', 'Mano de Obra (Jornales)', 'Transporte & Logística'],
+          datasets: [{
+            data: [39240000, 8500000, 6800000, 3910000],
+            backgroundColor: [tc.main, '#ff4d4d', '#ffb703', '#48cae4'],
+            borderColor: 'rgba(8, 12, 10, 0.95)',
+            borderWidth: 3,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { boxWidth: 14, color: '#e0f0e5', font: { size: 11 } }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(8, 12, 10, 0.95)',
+              borderColor: tc.main,
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw || 0;
+                  return ' $ ' + val.toLocaleString('es-CO');
+                }
+              }
+            }
+          },
+          cutout: '62%'
+        }
+      });
+    }
+
+    // 3. GRÁFICO DE LÍNEAS: Producción Histórica por Cultivo a Través del Tiempo
+    const ctxLine = document.getElementById('chartProduccionLineas');
+    if (ctxLine) {
+      if (lineChartInstance) lineChartInstance.destroy();
+      lineChartInstance = new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+          datasets: [
+            {
+              label: 'Lote El Mirador',
+              data: [500, 680, 820, 950, 1100, 1150],
+              borderColor: tc.main,
+              backgroundColor: tc.fill,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 4,
+              pointHoverRadius: 7
+            },
+            {
+              label: 'Lote San José',
+              data: [420, 550, 710, 840, 960, 970],
+              borderColor: '#4cc9f0',
+              backgroundColor: 'rgba(76, 201, 240, 0.08)',
+              fill: true,
+              tension: 0.35,
+              pointRadius: 4
+            },
+            {
+              label: 'Lote La Esperanza',
+              data: [380, 490, 600, 720, 810, 800],
+              borderColor: '#ffb703',
+              backgroundColor: 'transparent',
+              borderDash: [4, 4],
+              tension: 0.35,
+              pointRadius: 4
+            },
+            {
+              label: 'Lote La Pradera',
+              data: [300, 410, 520, 610, 700, 660],
+              borderColor: '#b5179e',
+              backgroundColor: 'transparent',
+              tension: 0.35,
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { boxWidth: 14, color: '#e0f0e5' }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(8, 12, 10, 0.95)',
+              borderColor: tc.main,
+              borderWidth: 1
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+            y: { grid: { color: 'rgba(255,255,255,0.08)' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+  }
+
+  // Lógica del Cambiador de Tema de Color (Verde, Azul, Naranja)
+  function setThemeColor(themeName) {
+    document.body.classList.remove('theme-blue', 'theme-orange');
+    if (themeName !== 'green') {
+      document.body.classList.add('theme-' + themeName);
+    }
+    localStorage.setItem('agrolulo_theme', themeName);
+
+    if (window.updateCanvasTheme) {
+      window.updateCanvasTheme(themeName);
+    }
+
+    initDashboardCharts(themeName);
+  }
+
+  // Cargar tema guardado, inicializar gráficos y animar contadores al iniciar
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    setThemeColor(savedTheme);
+    animateCounters();
+  });
+
+  function animateCounters() {
+    const counters = document.querySelectorAll('.counter-value');
+    const duration = 1600;
+    const startTime = performance.now();
+
+    function updateCounters(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      counters.forEach(counter => {
+        const target = parseFloat(counter.getAttribute('data-target'));
+        const isCurrency = counter.hasAttribute('data-currency');
+        const decimals = parseInt(counter.getAttribute('data-decimals') || '0');
+        const currentVal = target * easeOut;
+
+        let formattedVal = currentVal.toLocaleString('es-CO', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        });
+
+        if (isCurrency) {
+          counter.textContent = '$ ' + formattedVal;
+        } else {
+          counter.textContent = formattedVal;
+        }
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(updateCounters);
+      }
+    }
+
+    requestAnimationFrame(updateCounters);
+  }
+</script>
+
+<!-- Script de Animaciones de Fondo -->
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" class="h-100">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Aplicación</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.css')}}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css')}}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+</head>
+
+<body class="d-flex flex-column h-100 {% block body_class %}bg-light{% endblock %}">
+
+  <main class="flex-shrink-0">
+    {% block full_content %}
+    <div class="container mt-4 mx-auto">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="flash-message alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <div class="row justify-content-center">
+        <div class="col-md-10">
+
+          <div class="card-body">
+            <div class="container-fluid p-3">
+
+              {% block content %}
+              {% endblock %}
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endblock %}
+  </main>
+
+  <footer class="footer-lulo mt-auto">
+    <div class="footer-ticker-track">
+      <div class="footer-ticker-content">
+        <span><i class="bi bi-graph-up-arrow me-2"></i>El control exacto de tu dinero impulsa el éxito y la rentabilidad de tu cultivo de lulo.</span>
+        <span class="ticker-divider">✦</span>
+        <span><i class="bi bi-cash-stack me-2"></i>Registra tus gastos de insumos y las ganancias de tus cosechas.</span>
+        <span class="ticker-divider">✦</span>
+        <span><i class="bi bi-wallet2 me-2"></i>Invierte con inteligencia y maximiza el rendimiento de tus hectáreas.</span>
+        <span class="ticker-divider">✦</span>
+        <span><i class="bi bi-pie-chart-fill me-2"></i>Administra tu presupuesto agrícola en tiempo real.</span>
+        <span class="ticker-divider">✦</span>
+      </div>
+      <div class="footer-ticker-content" aria-hidden="true">
+        <span><i class="bi bi-graph-up-arrow me-2"></i>El control exacto de tu dinero impulsa el éxito y la rentabilidad de tu cultivo de lulo.</span>
+        <span class="ticker-divider">✦</span>
+        <span><i class="bi bi-cash-stack me-2"></i>Registra tus gastos de insumos y las ganancias de tus cosechas.</span>
+        <span class="ticker-divider">✦</span>
+        <span><i class="bi bi-wallet2 me-2"></i>Invierte con inteligencia y maximiza el rendimiento de tus hectáreas.</span>
+        <span class="ticker-divider">✦</span>
+        <span><i class="bi bi-pie-chart-fill me-2"></i>Administra tu presupuesto agrícola en tiempo real.</span>
+        <span class="ticker-divider">✦</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.js') }}"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Registro de Cultivos - AgroLulo{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<!-- Esferas de luz neón de fondo -->
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="dashboard-wrapper">
+
+  <!-- Sidebar Lateral Izquierda Fija -->
+  <aside id="sidebarLulo" class="sidebar-lulo">
+    <div class="mb-2">
+      <button type="button" class="btn-toggle-menu" onclick="toggleSidebar()" aria-label="Alternar Menú">
+        <i class="bi bi-list"></i>
+        <span class="sidebar-nav-content fw-bold text-white fs-6">Menú</span>
+      </button>
+    </div>
+
+    <div class="sidebar-nav-content d-flex flex-column h-100">
+      <div class="text-center pb-3 my-2 border-bottom border-secondary border-opacity-25">
+        <div class="brand-logo-badge mx-auto mb-2" style="width: 44px; height: 44px; font-size: 1.2rem;">
+          <i class="bi bi-tree-fill"></i>
+        </div>
+        <div class="sidebar-brand-title">
+          AgroLulo <span>System</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu list-unstyled flex-grow-1">
+        <li>
+          <a href="{{ url_for('auth.dashboard') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-speedometer2"></i>
+            </div>
+            <span>Dashboard General</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('cultivos.index') }}" class="sidebar-link active">
+            <div class="nav-icon-box">
+              <i class="bi bi-sprout-fill"></i>
+            </div>
+            <span>Registro de Cultivos</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-box-seam-fill"></i>
+            </div>
+            <span>Producción</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <span>Ingresos</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link" style="color: #ff4d4d;">
+            <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+              <i class="bi bi-dash-circle-fill"></i>
+            </div>
+            <span>Gastos</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #ffb703; border-color: rgba(255, 183, 3, 0.3);">
+              <i class="bi bi-bar-chart-line-fill"></i>
+            </div>
+            <span>Reportes</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('user.index') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #b5179e; border-color: rgba(181, 23, 158, 0.3);">
+              <i class="bi bi-person-badge-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        <li>
+          <a href="javascript:void(0)" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #48cae4; border-color: rgba(72, 202, 228, 0.3);">
+              <i class="bi bi-gear-wide-connected"></i>
+            </div>
+            <span>Configuración</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
+          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+          <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
+            current_user.nameUser }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
+          <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+            <i class="bi bi-box-arrow-right"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Área Principal de Contenido: Registro de Cultivos -->
+  <main class="main-content-lulo">
+
+    <!-- Encabezado de la Página -->
+    <div class="dash-card mb-4">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <div class="lulo-badge mb-2">
+            <i class="bi bi-sprout-fill"></i> Módulo de Plantaciones
+          </div>
+          <h1 class="fw-bold text-white mb-2 fs-2">
+            Registro de <span>Cultivos</span>
+          </h1>
+          <p class="text-muted mb-0">
+            Agrega nuevos lotes de lulo registrando su nombre y hectáreas. Al crearlo verás su Dashboard exclusivo de
+            métricas.
+          </p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('cultivos.new') }}" class="btn btn-neon-primary px-3 py-2 text-dark fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Cultivo
+          </a>
+          <a href="{{ url_for('auth.dashboard') }}" class="btn btn-neon-outline px-3 py-2">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard General
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTADO DE CULTIVOS REGISTRADOS CON FILTRO DE FECHAS HORIZONTAL Y COMPACTO -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <h5 class="fw-bold text-uppercase tracking-wider text-muted fs-6 mb-0">
+        <i class="bi bi-grid-fill me-1" style="color: var(--neon-green);"></i> Lotes & Cultivos Registrados ({{ cultivos|length }})
+      </h5>
+      
+      <!-- Filtro de fechas compacto -->
+      <form action="{{ url_for('cultivos.index') }}" method="GET" class="d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.82rem; margin-bottom: 0;">
+        <div class="d-flex align-items-center gap-1">
+          <span class="text-muted" style="font-size: 0.75rem;">Fecha inicial:</span>
+          <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control form-control-sm bg-dark text-white border-secondary border-opacity-50 py-0.5 px-2" style="max-width: 130px; font-size: 0.8rem; height: 28px; border-radius: 4px;" value="{{ fecha_inicio or '' }}">
+        </div>
+        
+        <span class="text-muted">→</span>
+        
+        <div class="d-flex align-items-center gap-1">
+          <span class="text-muted" style="font-size: 0.75rem;">Fecha final:</span>
+          <input type="date" id="fecha_fin" name="fecha_fin" class="form-control form-control-sm bg-dark text-white border-secondary border-opacity-50 py-0.5 px-2" style="max-width: 130px; font-size: 0.8rem; height: 28px; border-radius: 4px;" value="{{ fecha_fin or '' }}">
+        </div>
+        
+        <button type="submit" class="btn btn-sm btn-neon-outline py-1 px-3" style="font-size: 0.78rem; height: 28px; border-radius: 4px;" title="Filtrar">
+          <i class="bi bi-search me-1"></i> Filtrar
+        </button>
+        
+        <a href="{{ url_for('cultivos.index') }}" class="btn btn-sm btn-outline-secondary py-1 px-2.5 text-light" style="font-size: 0.78rem; height: 28px; border-radius: 4px;" title="Limpiar">
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </a>
+      </form>
+    </div>
+
+    <div class="row g-4">
+      {% for c in cultivos %}
+      <div class="col-xl-4 col-md-6">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <span class="badge bg-success bg-opacity-25 text-success mb-1" style="font-size: 0.75rem;">
+                Creado: {{ c.fecha_creacion.strftime('%d/%m/%Y') if c.fecha_creacion else 'N/A' }}
+              </span>
+              <span class="badge bg-info bg-opacity-25 text-info mb-1" style="font-size: 0.75rem;">
+                Sembrado: {{ c.fecha_sembrado.strftime('%d/%m/%Y') if c.fecha_sembrado else 'N/A' }}
+              </span>
+              <h4 class="fw-bold text-white mb-0 fs-5 mt-1">{{ c.nombre }}</h4>
+            </div>
+            <div class="indicator-icon-badge">
+              <i class="bi bi-sprout-fill"></i>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3 text-light" style="font-size: 0.9rem;">
+            <div class="col-6">
+              <span class="text-muted d-block" style="font-size: 0.78rem;">Superficie:</span>
+              <strong class="fs-6 text-white">{{ c.hectareas }} Ha</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block" style="font-size: 0.78rem;">Plantas Est.:</span>
+              <strong class="fs-6 text-white">{{ c.plantas or (c.hectareas * 680)|int }} Mantas</strong>
+            </div>
+            <div class="col-6 mt-2">
+              <span class="text-muted d-block" style="font-size: 0.78rem;">Producción:</span>
+              <strong class="text-info">{{ (c.produccion or (c.hectareas * 1140))|round(1) }} Kg</strong>
+            </div>
+            <div class="col-6 mt-2">
+              <span class="text-muted d-block" style="font-size: 0.78rem;">Ganancia Neta:</span>
+              <strong class="text-success">$ {{ ((c.ingresos - c.gastos) or (c.hectareas * 3139200))|int }}</strong>
+            </div>
+          </div>
+
+          <div
+            class="d-flex align-items-center justify-content-between pt-3 border-top border-secondary border-opacity-25">
+            <a href="{{ url_for('cultivos.dashboard', id=c.idCultivo) }}" class="btn btn-sm btn-neon-outline px-3">
+              <i class="bi bi-speedometer2 me-1"></i> Ver
+            </a>
+
+            <form action="{{ url_for('cultivos.delete', id=c.idCultivo) }}" method="POST"
+              onsubmit="return confirm('¿Seguro que deseas eliminar este cultivo?');">
+              <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center py-5">
+        <p class="text-muted fs-5">No hay cultivos registrados aún. ¡Agrega el primero arriba!</p>
+      </div>
+      {% endfor %}
+    </div>
+
+  </main>
+</div>
+
+<!-- ÚNICO BOTÓN FLOTANTE DE RAYO -->
+<button type="button" id="btnThemeToggle" class="theme-lightning-btn" onclick="cycleThemeColor()"
+  aria-label="Cambiar Tema de Color" title="Cambiar Tema de Color">
+  <i class="bi bi-lightning-charge-fill"></i>
+</button>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebarLulo').classList.toggle('expanded');
+  }
+
+  const themesSequence = ['green', 'blue', 'orange'];
+  function cycleThemeColor() {
+    const currentTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    const nextTheme = themesSequence[(themesSequence.indexOf(currentTheme) + 1) % themesSequence.length];
+    setThemeColor(nextTheme);
+  }
+
+  function setThemeColor(themeName) {
+    document.body.classList.remove('theme-blue', 'theme-orange');
+    if (themeName !== 'green') document.body.classList.add('theme-' + themeName);
+    localStorage.setItem('agrolulo_theme', themeName);
+    if (window.updateCanvasTheme) window.updateCanvasTheme(themeName);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setThemeColor(localStorage.getItem('agrolulo_theme') || 'green');
+  });
+</script>
+
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}
