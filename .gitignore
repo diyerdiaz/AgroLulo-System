@@ -1,0 +1,13 @@
+# Clave secreta y demás variables de entorno: nunca debe subirse a git.
+.env
+
+# Entorno virtual de Python y archivos compilados.
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Base de datos local (cada quien tiene la suya).
+instance/
+*.sqlite
+*.sqlite3

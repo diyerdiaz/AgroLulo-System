@@ -1,0 +1,17 @@
+services:
+  agrolulo:
+    build: .
+    container_name: agrolulo_system
+    env_file:
+      # Trae la SECRET_KEY fija (entre otras variables que se agreguen a
+      # futuro) desde el archivo .env de esta misma carpeta.
+      - .env
+    ports:
+      - "5000:5000"
+    volumes:
+      # Guarda la base de datos SQLite (flaskdb.sqlite) fuera del
+      # contenedor, en la carpeta "instance" del proyecto, para que tus
+      # cultivos, ingresos, gastos, pagos y usuarios NO se pierdan cada
+      # vez que se reconstruye o reinicia el contenedor.
+      - ./instance:/app/instance
+    restart: unless-stopped

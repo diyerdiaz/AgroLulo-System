@@ -1,0 +1,11 @@
+venv/
+.env
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+.gitattributes
+instance/
+*.sqlite
+*.sqlite3
+.DS_Store
