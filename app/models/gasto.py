@@ -33,4 +33,5 @@ class GastoCultivo(db.Model):
             'descripcion': self.descripcion,
             'valor': self.valor,
             'fecha': self.fecha,
+            'fecha_registro': self.fecha_registro,
         }

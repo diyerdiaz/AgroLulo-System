@@ -81,15 +81,23 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% if current_user.isAdmin %}
+        <li>
+          <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
 
       <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
-        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
-          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña">
           <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
-          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
-            current_user.nameUser }}</span>
-        </div>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
           <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
             <i class="bi bi-box-arrow-right"></i>
@@ -206,53 +214,115 @@
               <i class="bi bi-basket3-fill me-2" style="color: var(--neon-green);"></i> Cosechas
             </h4>
             <span class="badge bg-dark border border-secondary text-light px-3 py-2">
-              {{ filas|length }} registrada(s)
+              {{ total_cosechas }} registrada(s)
             </span>
           </div>
 
-          {% if filas %}
-          <div class="d-flex flex-column gap-3" style="max-height: 560px; overflow-y: auto;">
-            {% for f in filas %}
+          {% if cosechas %}
+          <div class="d-flex flex-column gap-3">
+            {% for c in cosechas %}
             <div class="p-3 rounded-3"
-              style="background: rgba(255, 255, 255, 0.02); border: 1px solid {{ 'var(--border-neon)' if f.esta_pagada else 'rgba(255, 183, 3, 0.35)' }};">
+              style="background: rgba(255, 255, 255, 0.02); border: 1px solid {{ 'var(--border-neon)' if c.esta_pagada else 'rgba(255, 183, 3, 0.35)' }};">
               <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
                 <div class="d-flex align-items-center gap-3">
-                  <div class="indicator-icon-badge" style="width: 40px; height: 40px; font-size: 1rem; color: {{ f.color }}; border-color: {{ f.color }}66; background: {{ f.color }}1a;">
-                    <i class="bi {{ f.icon }}"></i>
+                  <div class="indicator-icon-badge" style="width: 40px; height: 40px; font-size: 1rem; color: var(--neon-green); border-color: rgba(57, 255, 20, 0.4); background: rgba(57, 255, 20, 0.1);">
+                    <i class="bi bi-basket3-fill"></i>
                   </div>
                   <div>
-                    <div class="fw-bold text-white" style="font-size: 0.92rem;">{{ f.label }}</div>
+                    <div class="fw-bold text-white" style="font-size: 0.92rem;">Cosecha {{ c.numero }}</div>
                     <div class="text-muted" style="font-size: 0.78rem;">
-                      Cosecha: {{ f.fecha.strftime('%d/%m/%Y') if f.fecha else 'N/A' }}
-                      {% if f.cantidad_canastillas %}
-                      &middot; {{ f.cantidad_canastillas|int }} canastillas &times; $ {{ f.precio_canastilla_fmt }} c/u
-                      {% elif f.descripcion %}
-                      &middot; {{ f.descripcion }}
-                      {% endif %}
+                      {{ c.fecha.strftime('%d/%m/%Y') if c.fecha else 'N/A' }}
+                      &middot; {{ c.cantidad_tipos }} tipo{{ 's' if c.cantidad_tipos != 1 else '' }}
                     </div>
                   </div>
                 </div>
-                <strong class="text-white" style="font-size: 0.95rem;">$ {{ f.valor_fmt }}</strong>
+                <div class="d-flex align-items-center gap-2">
+                  <strong class="text-white" style="font-size: 0.95rem;">$ {{ c.valor_total_fmt }}</strong>
+                  <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#detallePago{{ c.grupo_id }}" title="Ver detalle">
+                      <i class="bi bi-eye-fill"></i>
+                    </button>
+                    <a href="{{ url_for('pagos.pago_editar', id=cultivo.idCultivo, grupo_id=c.grupo_id) }}" class="btn btn-sm btn-outline-warning" title="Editar Pago">
+                      <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <form action="{{ url_for('pagos.pago_eliminar', id=cultivo.idCultivo, grupo_id=c.grupo_id) }}" method="POST"
+                      onsubmit="return confirm('¿Eliminar el pago registrado de esta cosecha? La cosecha en sí no se borra, solo vuelve a quedar pendiente de pago.');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Pago">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </div>
 
               <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-25">
-                {% if f.esta_pagada %}
+                {% if c.esta_pagada %}
                 <span class="badge bg-success bg-opacity-25 text-success px-2 py-2" style="font-size: 0.75rem;">
-                  <i class="bi bi-check-circle-fill me-1"></i> Pagada el {{ f.fecha_pago.strftime('%d/%m/%Y') if f.fecha_pago else 'N/A' }}
+                  <i class="bi bi-check-circle-fill me-1"></i> Pagada el {{ c.fecha_pago.strftime('%d/%m/%Y') if c.fecha_pago else 'N/A' }}
                 </span>
-                <span class="text-muted" style="font-size: 0.78rem;">Recibiste: <strong class="text-success">$ {{ f.pagado_fmt }}</strong></span>
+                <span class="text-muted" style="font-size: 0.78rem;">Recibiste: <strong class="text-success">$ {{ c.pagado_total_fmt }}</strong></span>
                 {% else %}
                 <span class="badge bg-warning bg-opacity-25 text-warning px-2 py-2" style="font-size: 0.75rem;">
-                  <i class="bi bi-hourglass-split me-1"></i> Falta que te paguen $ {{ f.saldo_fmt }}
+                  <i class="bi bi-hourglass-split me-1"></i> Falta que te paguen $ {{ c.saldo_total_fmt }}
                 </span>
-                {% if f.pagado > 0 %}
-                <span class="text-muted" style="font-size: 0.78rem;">Abonado: <strong class="text-white">$ {{ f.pagado_fmt }}</strong> de $ {{ f.valor_fmt }}</span>
+                {% if c.pagado_total > 0 %}
+                <span class="text-muted" style="font-size: 0.78rem;">Abonado: <strong class="text-white">$ {{ c.pagado_total_fmt }}</strong> de $ {{ c.valor_total_fmt }}</span>
                 {% endif %}
                 {% endif %}
+              </div>
+
+              <div class="collapse mt-3" id="detallePago{{ c.grupo_id }}">
+                <div class="d-flex flex-column gap-2 pt-2 border-top border-secondary border-opacity-25">
+                  {% for t in c.tipos %}
+                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-1" style="font-size: 0.82rem;">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi {{ t.icon }}" style="color: {{ t.color }};"></i>
+                      <span class="text-white">{{ t.label }}</span>
+                      {% if t.cantidad_canastillas %}
+                      <span class="text-muted">&middot; {{ t.cantidad_canastillas|int }} canastillas &times; $ {{ t.precio_canastilla_fmt }} c/u</span>
+                      {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="text-success fw-bold">$ {{ t.valor_fmt }}</span>
+                      {% if t.esta_pagada %}
+                      <span class="badge bg-success bg-opacity-25 text-success" style="font-size: 0.7rem;">Pagado $ {{ t.pagado_fmt }}</span>
+                      {% else %}
+                      <span class="badge bg-warning bg-opacity-25 text-warning" style="font-size: 0.7rem;">Falta $ {{ t.saldo_fmt }}</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
               </div>
             </div>
             {% endfor %}
           </div>
+
+          {% if total_paginas > 1 %}
+          <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top border-secondary border-opacity-25">
+            {% if pagina_actual > 1 %}
+            <a href="{{ url_for('pagos.ver', id=cultivo.idCultivo, pagina=pagina_actual - 1) }}" class="btn btn-sm btn-neon-outline">
+              <i class="bi bi-arrow-left me-1"></i> Anterior
+            </a>
+            {% else %}
+            <span class="btn btn-sm btn-outline-secondary disabled">
+              <i class="bi bi-arrow-left me-1"></i> Anterior
+            </span>
+            {% endif %}
+
+            <span class="text-muted" style="font-size: 0.82rem;">Página {{ pagina_actual }} de {{ total_paginas }}</span>
+
+            {% if pagina_actual < total_paginas %}
+            <a href="{{ url_for('pagos.ver', id=cultivo.idCultivo, pagina=pagina_actual + 1) }}" class="btn btn-sm btn-neon-outline">
+              Siguiente <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+            {% else %}
+            <span class="btn btn-sm btn-outline-secondary disabled">
+              Siguiente <i class="bi bi-arrow-right ms-1"></i>
+            </span>
+            {% endif %}
+          </div>
+          {% endif %}
           {% else %}
           <div class="text-center py-5">
             <i class="bi bi-basket text-muted" style="font-size: 2.5rem;"></i>

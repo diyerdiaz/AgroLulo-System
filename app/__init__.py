@@ -37,7 +37,13 @@ def create_app():
     @login_manager.user_loader
     def load_user(idUser):
         from .models.users import User
-        return User.query.get(int(idUser))
+        user = User.query.get(int(idUser))
+        # Si al administrador le da por bloquear una cuenta que ya tenía
+        # una sesión abierta, que quede afuera de una vez (no solo se le
+        # impide volver a iniciar sesión).
+        if user and not user.activo:
+            return None
+        return user
 
     # Register blueprints
     from app.routes import (
@@ -68,26 +74,78 @@ def create_app():
             _asegurar_columnas('ingresos_cultivo', [
                 ('cantidad_canastillas', 'FLOAT'),
                 ('precio_canastilla', 'FLOAT'),
+                ('peso_canastilla', 'FLOAT'),
                 ('monto_pagado', 'FLOAT DEFAULT 0'),
                 ('fecha_pago', 'DATE'),
+                ('idCogida', 'INTEGER'),
+            ])
+            _asegurar_columnas('actividades_cultivo', [
+                ('idCogida', 'INTEGER'),
+            ])
+            _asegurar_columnas('users', [
+                ('isAdmin', 'BOOLEAN DEFAULT 0'),
+                ('activo', 'BOOLEAN DEFAULT 1'),
+            ])
+            _asegurar_columnas('cultivos', [
+                ('idUser', 'INTEGER'),
             ])
 
             from app.models.users import User
             from app.models.cultivo import Cultivo
 
-            if not User.query.filter_by(nameUser='admin').first():
-                db.session.add(User(nameUser='admin', passwordUser='123'))
+            admin = User.query.filter_by(nameUser='admin').first()
+            if not admin:
+                admin = User(nameUser='admin', isAdmin=True, activo=True)
+                admin.set_password('123')
+                db.session.add(admin)
+                db.session.commit()
+            else:
+                cambios_admin = False
+                if not admin.isAdmin:
+                    # Cubre bases de datos que ya existían antes de que se
+                    # agregara la columna isAdmin: la cuenta 'admin' siempre
+                    # debe quedar marcada como administradora.
+                    admin.isAdmin = True
+                    cambios_admin = True
+                if not admin.activo:
+                    # La cuenta 'admin' nunca debe quedar bloqueada, aunque
+                    # alguien la hubiera desactivado por error.
+                    admin.activo = True
+                    cambios_admin = True
+                if cambios_admin:
+                    db.session.commit()
+
+            # Las contraseñas ahora se guardan encriptadas (hash), nunca en
+            # texto plano. Esto encripta, sin pedirle nada a nadie, las
+            # contraseñas de cuentas que ya existían de antes (guardadas tal
+            # cual las escribió cada quien) apenas arranca el servidor.
+            usuarios_sin_encriptar = [
+                u for u in User.query.all() if not User.es_hash_valido(u.passwordUser)
+            ]
+            if usuarios_sin_encriptar:
+                for u in usuarios_sin_encriptar:
+                    u.set_password(u.passwordUser)
                 db.session.commit()
 
-            if Cultivo.query.count() == 0:
-                lotes_defecto = [
-                    Cultivo(nombre='Lote El Mirador', hectareas=4.0, plantas=2720, produccion=4200.0, ingresos=17220000.0, gastos=5650000.0),
-                    Cultivo(nombre='Lote San José', hectareas=3.5, plantas=2380, produccion=3850.0, ingresos=15785000.0, gastos=5180000.0),
-                    Cultivo(nombre='Lote La Esperanza', hectareas=3.0, plantas=2040, produccion=3400.0, ingresos=13940000.0, gastos=4570000.0),
-                    Cultivo(nombre='Lote La Pradera', hectareas=2.0, plantas=1360, produccion=2800.0, ingresos=11505000.0, gastos=3810000.0),
-                ]
-                db.session.add_all(lotes_defecto)
+            # Cada cuenta ahora ve solo sus propios cultivos. Los cultivos
+            # que ya existían antes de que existiera este campo (idUser
+            # vacío) se le asignan al administrador, para no perder esa
+            # información: siguen siendo suyos, y las cuentas nuevas que se
+            # registren de aquí en adelante arrancan sin ver nada de eso.
+            huerfanos = Cultivo.query.filter_by(idUser=None).all()
+            if huerfanos:
+                for c in huerfanos:
+                    c.idUser = admin.idUser
                 db.session.commit()
+
+            # NOTA: aquí antes se sembraban 4 cultivos de ejemplo con cifras
+            # inventadas ("Lote El Mirador", etc.) cada vez que la tabla de
+            # cultivos quedaba en 0 (por ejemplo, justo después de borrar
+            # todos). Eso hacía que, al reiniciar el servidor con la tabla
+            # vacía, reaparecieran cultivos con plata falsa como si fueran
+            # reales. Se quitó: si no hay cultivos, la tabla simplemente
+            # queda vacía (así lo maneja ya el Dashboard General y el
+            # listado de Cultivos).
         except Exception as e:
             print("Auto DB init warning:", e)
 

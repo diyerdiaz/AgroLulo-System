@@ -20,8 +20,14 @@ class IngresoCultivo(db.Model):
     idIngreso = db.Column(db.Integer, primary_key=True)
     idCultivo = db.Column(db.Integer, db.ForeignKey('cultivos.idCultivo'), nullable=False)
     tipo = db.Column(db.String(30), nullable=False)
+    # Agrupa los registros (Grueso/Parejo/Riche) que se digitaron juntos en
+    # una misma cogida, para poder mostrarlos y editarlos como una sola
+    # "Cosecha" en el listado (en vez de una fila por cada tipo). Se le
+    # asigna el idIngreso del primer registro del grupo.
+    idCogida = db.Column(db.Integer, nullable=True)
     cantidad_canastillas = db.Column(db.Float, nullable=True)
     precio_canastilla = db.Column(db.Float, nullable=True)
+    peso_canastilla = db.Column(db.Float, nullable=True)
     descripcion = db.Column(db.String(200), nullable=True)
     valor = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.Date, nullable=False)
@@ -40,16 +46,26 @@ class IngresoCultivo(db.Model):
     def esta_pagada(self):
         return self.saldo_pendiente <= 0
 
+    @property
+    def kilos(self):
+        """Total de kilos de esta cogida: canastillas x peso de cada una."""
+        if self.cantidad_canastillas and self.peso_canastilla:
+            return self.cantidad_canastillas * self.peso_canastilla
+        return 0.0
+
     def to_dict(self):
         info = TIPOS_INGRESO.get(self.tipo, {'label': self.tipo, 'icon': 'bi-cash', 'color': '#ffffff'})
         return {
             'id': self.idIngreso,
+            'idCogida': self.idCogida,
             'tipo': self.tipo,
             'label': info['label'],
             'icon': info['icon'],
             'color': info['color'],
             'cantidad_canastillas': self.cantidad_canastillas,
             'precio_canastilla': self.precio_canastilla,
+            'peso_canastilla': self.peso_canastilla,
+            'kilos': self.kilos,
             'descripcion': self.descripcion,
             'valor': self.valor,
             'fecha': self.fecha,

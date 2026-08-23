@@ -26,11 +26,15 @@ def add():
     from flask import flash
     if request.method == 'POST':
         nameUser = request.form['nameUser']
-        passwordUser = request.form['passwordUser']        
-        new_user = User(nameUser=nameUser, passwordUser=passwordUser)
+        passwordUser = request.form['passwordUser']
+        # Las cuentas que se crean desde "Crear Cuenta Nueva" quedan
+        # bloqueadas hasta que el administrador las active manualmente
+        # desde la sección de Usuarios: por eso activo=False acá.
+        new_user = User(nameUser=nameUser, activo=False)
+        new_user.set_password(passwordUser)
         db.session.add(new_user)
         db.session.commit()
-        flash("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.", "success")
+        flash("¡Cuenta creada exitosamente! Espera a que el administrador la active para poder iniciar sesión.", "warning")
         return redirect(url_for('auth.login'))
     return render_template('login.html', show_register=True)
 
@@ -39,8 +43,10 @@ def edit(id):
     user = User.query.get_or_404(id)
     if request.method == 'POST':
         user.nameUser = request.form['nameUser']
-        user.passwordUser = request.form['passwordUser']
-        db.session.commit()        
+        nueva_password = request.form['passwordUser']
+        if nueva_password:
+            user.set_password(nueva_password)
+        db.session.commit()
         return redirect(url_for('user.index'))
 
     return render_template('users/edit.html', user=user)

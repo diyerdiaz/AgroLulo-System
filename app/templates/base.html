@@ -73,6 +73,18 @@
   <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.js') }}"></script>
   <script src="{{ url_for('static', filename='js/page-loading.js') }}"></script>
 
+  <script>
+    // Abre el calendario nativo al hacer clic en cualquier parte de un campo
+    // de fecha (no solo en el iconito), para que en computador no toque usar
+    // las flechitas de arriba/abajo para cambiar día, mes o año uno por uno.
+    document.addEventListener('click', function (e) {
+      var input = e.target.closest ? e.target.closest('input[type="date"]') : null;
+      if (input && typeof input.showPicker === 'function') {
+        try { input.showPicker(); } catch (err) { /* el navegador puede bloquearlo en algunos casos */ }
+      }
+    });
+  </script>
+
 </body>
 
 </html>

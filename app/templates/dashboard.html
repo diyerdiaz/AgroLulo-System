@@ -88,14 +88,24 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% if current_user.isAdmin %}
+        <li>
+          <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
 
       <!-- Usuario & Logout en la parte inferior -->
       <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
-        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña">
           <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
           <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
-        </div>
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
           <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
             <i class="bi bi-box-arrow-right"></i>
@@ -121,6 +131,17 @@
         <i class="bi bi-person-circle me-1"></i> {{ current_user.nameUser }}
       </span>
     </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
+      <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
 
     <!-- Encabezado de la Página -->
     <div class="dash-card mb-4">
@@ -160,7 +181,7 @@
             <div>
               <div class="indicator-title">Total de Cultivos</div>
               <div class="indicator-value">
-                <span class="counter-value" data-target="4">0</span>
+                <span class="counter-value" data-target="{{ total_cultivos }}">0</span>
                 <span class="fs-5 text-muted font-normal ms-1">Lotes</span>
               </div>
             </div>
@@ -170,7 +191,11 @@
           </div>
           <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
             <small class="text-muted">Lotes activos y en producción</small>
+            {% if total_cultivos > 0 %}
             <span class="badge bg-success bg-opacity-25 text-success">100% Activo</span>
+            {% else %}
+            <span class="badge bg-secondary bg-opacity-25 text-light">Sin Cultivos</span>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -182,7 +207,7 @@
             <div>
               <div class="indicator-title">Hectáreas Totales</div>
               <div class="indicator-value">
-                <span class="counter-value" data-target="12.5" data-decimals="1">0</span>
+                <span class="counter-value" data-target="{{ total_hectareas }}" data-decimals="1">0</span>
                 <span class="fs-5 text-muted font-normal ms-1">Ha</span>
               </div>
             </div>
@@ -192,7 +217,7 @@
           </div>
           <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
             <small class="text-muted">Superficie sembrada</small>
-            <small class="text-warning fw-semibold">3.1 Ha / Lote prom.</small>
+            <small class="text-warning fw-semibold">{{ ha_promedio }} Ha / Lote prom.</small>
           </div>
         </div>
       </div>
@@ -204,7 +229,7 @@
             <div>
               <div class="indicator-title">Total de Plantas</div>
               <div class="indicator-value">
-                <span class="counter-value" data-target="8500">0</span>
+                <span class="counter-value" data-target="{{ total_plantas }}">0</span>
                 <span class="fs-5 text-muted font-normal ms-1">Mantas</span>
               </div>
             </div>
@@ -214,7 +239,11 @@
           </div>
           <div class="mt-3 pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
             <small class="text-muted">Densidad óptima de siembra</small>
-            <small class="text-success fw-semibold">Salud 98.2%</small>
+            {% if total_cultivos > 0 %}
+            <small class="text-success fw-semibold">Prom. {{ plantas_promedio }} / lote</small>
+            {% else %}
+            <small class="text-muted fw-semibold">Sin datos</small>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -237,7 +266,7 @@
             <div>
               <div class="indicator-title">Producción Total</div>
               <div class="indicator-value">
-                <span class="counter-value" data-target="14250">0</span>
+                <span class="counter-value" data-target="{{ total_produccion }}">0</span>
                 <span class="fs-6 text-muted font-normal ms-1">Kg</span>
               </div>
             </div>
@@ -258,7 +287,7 @@
             <div>
               <div class="indicator-title">Ingresos Totales</div>
               <div class="indicator-value">
-                <span class="counter-value" data-target="58450000" data-currency="true">$ 0</span>
+                <span class="counter-value" data-target="{{ total_ingresos }}" data-currency="true">$ 0</span>
               </div>
             </div>
             <div class="indicator-icon-badge">
@@ -278,7 +307,7 @@
             <div>
               <div class="indicator-title">Gastos Totales</div>
               <div class="indicator-value">
-                <span class="counter-value" data-target="19210000" data-currency="true">$ 0</span>
+                <span class="counter-value" data-target="{{ total_gastos }}" data-currency="true">$ 0</span>
               </div>
             </div>
             <div class="indicator-icon-badge" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.4); background: rgba(255, 77, 77, 0.1);">
@@ -298,7 +327,7 @@
             <div>
               <div class="indicator-title" style="color: var(--neon-green);">Ganancias Totales</div>
               <div class="indicator-value highlight-green">
-                <span class="counter-value" data-target="39240000" data-currency="true">$ 0</span>
+                <span class="counter-value" data-target="{{ total_ganancias }}" data-currency="true">$ 0</span>
               </div>
             </div>
             <div class="indicator-icon-badge" style="background: rgba(57, 255, 20, 0.2); box-shadow: 0 0 20px var(--neon-green-glow);">
@@ -307,7 +336,7 @@
           </div>
           <div class="pt-2 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
             <small class="text-white fw-bold">Utilidad Neta</small>
-            <span class="badge bg-success text-dark fw-bold">67.1% Rentabilidad</span>
+            <span class="badge bg-success text-dark fw-bold">{{ rentabilidad }}% Rentabilidad</span>
           </div>
         </div>
       </div>
@@ -333,7 +362,13 @@
             <span class="badge bg-dark border border-secondary text-light">Barras</span>
           </div>
           <div class="chart-container-box">
+            {% if total_cultivos > 0 %}
             <canvas id="chartProduccionBarras"></canvas>
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100 text-center">
+              <p class="text-muted mb-0"><i class="bi bi-inboxes d-block fs-2 mb-2"></i>Aún no tienes cultivos registrados.</p>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -348,7 +383,13 @@
             <span class="badge bg-dark border border-secondary text-light">Pastel</span>
           </div>
           <div class="chart-container-box">
+            {% if chart_data.pie.hay_datos %}
             <canvas id="chartGastosInversionPastel"></canvas>
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100 text-center">
+              <p class="text-muted mb-0"><i class="bi bi-pie-chart d-block fs-2 mb-2"></i>Aún no hay ingresos ni gastos registrados.</p>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -358,12 +399,18 @@
         <div class="chart-card">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="fw-bold text-white fs-6">
-              <i class="bi bi-graph-up-arrow me-2" style="color: #4cc9f0;"></i> 3. Producción Histórica por Cultivo a Través del Tiempo
+              <i class="bi bi-graph-up-arrow me-2" style="color: #4cc9f0;"></i> 3. Ingresos por Cultivo a Través del Tiempo (Últimos 6 Meses)
             </div>
             <span class="badge bg-dark border border-secondary text-light">Líneas Mensuales</span>
           </div>
           <div class="chart-container-box" style="height: 320px;">
+            {% if chart_data.linea.hay_datos %}
             <canvas id="chartProduccionLineas"></canvas>
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center h-100 text-center">
+              <p class="text-muted mb-0"><i class="bi bi-graph-up d-block fs-2 mb-2"></i>Aún no hay ingresos registrados en los últimos 6 meses.</p>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -383,6 +430,10 @@
 
 <!-- Lógica de Interactividad, Gráficos Chart.js, Cambiador de Tema y Animación de Contadores -->
 <script>
+  // Datos reales del Dashboard, calculados en el servidor a partir de los
+  // cultivos que existen de verdad (si no hay ninguno, todo queda vacío/cero).
+  const DASHBOARD_DATA = {{ chart_data|tojson }};
+
   function toggleSidebar() {
     const sidebar = document.getElementById('sidebarLulo');
     sidebar.classList.toggle('expanded');
@@ -432,15 +483,16 @@
     const ctxBar = document.getElementById('chartProduccionBarras');
     if (ctxBar) {
       if (barChartInstance) barChartInstance.destroy();
+      const prod = DASHBOARD_DATA.produccion;
       barChartInstance = new Chart(ctxBar, {
         type: 'bar',
         data: {
-          labels: ['Lote El Mirador', 'Lote San José', 'Lote La Esperanza', 'Lote La Pradera'],
+          labels: prod.labels,
           datasets: [{
             label: 'Producción (Kg)',
-            data: [4200, 3850, 3400, 2800],
-            backgroundColor: [tc.main, '#4cc9f0', '#ffb703', '#b5179e'],
-            borderColor: [tc.main, '#4cc9f0', '#ffb703', '#b5179e'],
+            data: prod.data,
+            backgroundColor: prod.colores,
+            borderColor: prod.colores,
             borderWidth: 1.5,
             borderRadius: 8
           }]
@@ -470,13 +522,16 @@
     const ctxPie = document.getElementById('chartGastosInversionPastel');
     if (ctxPie) {
       if (pieChartInstance) pieChartInstance.destroy();
+      const pie = DASHBOARD_DATA.pie;
+      const pieColores = pie.colores.slice();
+      pieColores[0] = tc.main; // la utilidad usa el color del tema activo
       pieChartInstance = new Chart(ctxPie, {
         type: 'doughnut',
         data: {
-          labels: ['Utilidad Neta (Ganancia)', 'Insumos & Fertilizantes', 'Mano de Obra (Jornales)', 'Transporte & Logística'],
+          labels: pie.labels,
           datasets: [{
-            data: [39240000, 8500000, 6800000, 3910000],
-            backgroundColor: [tc.main, '#ff4d4d', '#ffb703', '#48cae4'],
+            data: pie.data,
+            backgroundColor: pieColores,
             borderColor: 'rgba(8, 12, 10, 0.95)',
             borderWidth: 3,
             hoverOffset: 8
@@ -507,52 +562,25 @@
       });
     }
 
-    // 3. GRÁFICO DE LÍNEAS: Producción Histórica por Cultivo a Través del Tiempo
+    // 3. GRÁFICO DE LÍNEAS: Ingresos por Cultivo a Través del Tiempo
     const ctxLine = document.getElementById('chartProduccionLineas');
     if (ctxLine) {
       if (lineChartInstance) lineChartInstance.destroy();
+      const linea = DASHBOARD_DATA.linea;
       lineChartInstance = new Chart(ctxLine, {
         type: 'line',
         data: {
-          labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
-          datasets: [
-            {
-              label: 'Lote El Mirador',
-              data: [500, 680, 820, 950, 1100, 1150],
-              borderColor: tc.main,
-              backgroundColor: tc.fill,
-              fill: true,
-              tension: 0.35,
-              pointRadius: 4,
-              pointHoverRadius: 7
-            },
-            {
-              label: 'Lote San José',
-              data: [420, 550, 710, 840, 960, 970],
-              borderColor: '#4cc9f0',
-              backgroundColor: 'rgba(76, 201, 240, 0.08)',
-              fill: true,
-              tension: 0.35,
-              pointRadius: 4
-            },
-            {
-              label: 'Lote La Esperanza',
-              data: [380, 490, 600, 720, 810, 800],
-              borderColor: '#ffb703',
-              backgroundColor: 'transparent',
-              borderDash: [4, 4],
-              tension: 0.35,
-              pointRadius: 4
-            },
-            {
-              label: 'Lote La Pradera',
-              data: [300, 410, 520, 610, 700, 660],
-              borderColor: '#b5179e',
-              backgroundColor: 'transparent',
-              tension: 0.35,
-              pointRadius: 4
-            }
-          ]
+          labels: linea.labels,
+          datasets: linea.series.map((s, i) => ({
+            label: s.label,
+            data: s.data,
+            borderColor: i === 0 ? tc.main : s.color,
+            backgroundColor: i === 0 ? tc.fill : 'transparent',
+            fill: i === 0,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 7
+          }))
         },
         options: {
           responsive: true,

@@ -81,15 +81,23 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% if current_user.isAdmin %}
+        <li>
+          <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
 
       <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
-        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
-          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña">
           <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
-          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
-            current_user.nameUser }}</span>
-        </div>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
           <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
             <i class="bi bi-box-arrow-right"></i>
@@ -189,11 +197,11 @@
             </div>
             <div class="col-6 mt-2">
               <span class="text-muted d-block" style="font-size: 0.78rem;">Producción:</span>
-              <strong class="text-info">{{ (c.produccion or (c.hectareas * 1140))|round(1) }} Kg</strong>
+              <strong class="text-info">{{ (c.produccion or 0)|round(1) }} Kg</strong>
             </div>
             <div class="col-6 mt-2">
               <span class="text-muted d-block" style="font-size: 0.78rem;">Ganancia Neta:</span>
-              <strong class="text-success">$ {{ ((c.ingresos - c.gastos) or (c.hectareas * 3139200))|int }}</strong>
+              <strong class="text-success">$ {{ ((c.ingresos or 0) - (c.gastos or 0))|int }}</strong>
             </div>
           </div>
 
@@ -203,12 +211,18 @@
               <i class="bi bi-speedometer2 me-1"></i> Ver
             </a>
 
-            <form action="{{ url_for('cultivos.delete', id=c.idCultivo) }}" method="POST"
-              onsubmit="return confirm('¿Seguro que deseas eliminar este cultivo?');">
-              <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1">
-                <i class="bi bi-trash-fill"></i>
-              </button>
-            </form>
+            <div class="d-flex align-items-center gap-2">
+              <a href="{{ url_for('cultivos.editar', id=c.idCultivo) }}" class="btn btn-sm btn-outline-warning px-2 py-1" title="Editar Cultivo">
+                <i class="bi bi-pencil-fill"></i>
+              </a>
+
+              <form action="{{ url_for('cultivos.delete', id=c.idCultivo) }}" method="POST"
+                onsubmit="return confirm('¿Seguro que deseas eliminar este cultivo? Se borrarán también sus ingresos, gastos y etiquetas del calendario.');">
+                <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Eliminar Cultivo">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

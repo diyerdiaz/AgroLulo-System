@@ -81,15 +81,23 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% if current_user.isAdmin %}
+        <li>
+          <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
 
       <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
-        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
-          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña">
           <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
-          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
-            current_user.nameUser }}</span>
-        </div>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
           <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
             <i class="bi bi-box-arrow-right"></i>

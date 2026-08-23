@@ -81,15 +81,23 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% if current_user.isAdmin %}
+        <li>
+          <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #4cc9f0; border-color: rgba(76, 201, 240, 0.3);">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <span>Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
 
       <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
-        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
-          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña">
           <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
-          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
-            current_user.nameUser }}</span>
-        </div>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
           <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
             <i class="bi bi-box-arrow-right"></i>
@@ -147,7 +155,7 @@
             <i class="bi bi-pencil-square me-2" style="color: var(--neon-green);"></i> Registrar Ingresos
           </h4>
           <p class="text-muted mb-3" style="font-size: 0.8rem;">
-            Cada cogida trae lulo grueso, parejo y riche, y a cada uno le pagan diferente. Digita las canastillas y el precio de cada uno.
+            Cada cogida trae lulo grueso, parejo y riche, y a cada uno le pagan diferente. Digita las canastillas, el precio y el peso de cada una para saber los kilos.
           </p>
 
           <form action="{{ url_for('ingresos.agregar', id=cultivo.idCultivo) }}" method="POST" class="row g-3" id="formCogida">
@@ -171,43 +179,33 @@
                   <span class="fw-bold text-white" style="font-size: 0.92rem;">{{ info.label }}</span>
                 </div>
                 <div class="row g-2">
-                  <div class="col-6">
+                  <div class="col-4">
                     <label class="form-neon-label mb-1" style="font-size: 0.72rem;">Canastillas</label>
                     <input type="number" name="cantidad_{{ clave }}" id="cantidad_{{ clave }}" class="form-control campo-cogida" data-tipo="{{ clave }}" min="0" step="1" placeholder="0">
                   </div>
-                  <div class="col-6">
+                  <div class="col-4">
                     <label class="form-neon-label mb-1" style="font-size: 0.72rem;">Precio c/u ($)</label>
                     <input type="number" name="precio_{{ clave }}" id="precio_{{ clave }}" class="form-control campo-cogida" data-tipo="{{ clave }}" min="0" step="1" placeholder="0">
                   </div>
+                  <div class="col-4">
+                    <label class="form-neon-label mb-1" style="font-size: 0.72rem;">Peso c/u (Kg)</label>
+                    <input type="number" name="peso_{{ clave }}" id="peso_{{ clave }}" class="form-control campo-cogida" data-tipo="{{ clave }}" min="0" step="0.1" placeholder="0">
+                  </div>
                 </div>
-                <div class="text-end mt-1">
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                  <small class="text-muted">Kilos: <span class="text-white fw-bold" id="kilos_{{ clave }}">0 Kg</span></small>
                   <small class="text-muted">Subtotal: <span class="text-white fw-bold" id="subtotal_{{ clave }}">$ 0</span></small>
                 </div>
               </div>
             </div>
             {% endfor %}
 
-            <div class="col-12">
-              <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-neon);">
-                <div class="fw-bold text-white mb-2" style="font-size: 0.85rem;">
-                  <i class="bi bi-three-dots me-1"></i> Otro Ingreso (opcional)
-                </div>
-                <div class="row g-2">
-                  <div class="col-6">
-                    <label class="form-neon-label mb-1" style="font-size: 0.72rem;">Valor ($)</label>
-                    <input type="number" name="valor_otro" id="valor_otro" class="form-control campo-cogida" data-tipo="otro" min="0" step="1" placeholder="0">
-                  </div>
-                  <div class="col-6">
-                    <label class="form-neon-label mb-1" style="font-size: 0.72rem;">Descripción</label>
-                    <input type="text" name="descripcion_otro" class="form-control" placeholder="Ej: Bono" maxlength="200">
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div class="col-12 mt-2 pt-2 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between">
               <span class="text-muted" style="font-size: 0.85rem;">Total de la cogida:</span>
-              <strong class="text-white fs-5" id="totalCogida">$ 0</strong>
+              <div class="text-end">
+                <strong class="text-white fs-5 d-block" id="totalCogida">$ 0</strong>
+                <small class="text-muted">Total: <span class="text-info fw-bold" id="kilosTotal">0 Kg</span></small>
+              </div>
             </div>
 
             <div class="col-12 mt-2">
@@ -227,44 +225,101 @@
             <h4 class="fw-bold text-white mb-0 fs-5">
               <i class="bi bi-receipt me-2" style="color: var(--neon-green);"></i> Lo que ha recibido
             </h4>
-            <span class="badge bg-dark border border-secondary text-light px-3 py-2">
-              Total: <strong class="text-white">$ {{ total_fmt }}</strong>
-            </span>
+            <div class="d-flex gap-2">
+              <span class="badge bg-dark border border-secondary text-light px-3 py-2">
+                Total: <strong class="text-white">$ {{ total_fmt }}</strong>
+              </span>
+              <span class="badge bg-dark border border-secondary text-info px-3 py-2">
+                <strong>{{ total_kilos }} Kg</strong>
+              </span>
+            </div>
           </div>
 
-          {% if ingresos %}
-          <div class="d-flex flex-column gap-3" style="max-height: 520px; overflow-y: auto;">
-            {% for i in ingresos %}
-            <div class="d-flex align-items-center justify-content-between gap-3 p-3 rounded-3"
-              style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-neon);">
-              <div class="d-flex align-items-center gap-3">
-                <div class="indicator-icon-badge" style="width: 42px; height: 42px; font-size: 1.05rem; color: {{ i.color }}; border-color: {{ i.color }}66; background: {{ i.color }}1a;">
-                  <i class="bi {{ i.icon }}"></i>
+          {% if cosechas %}
+          <div class="d-flex flex-column gap-3">
+            {% for c in cosechas %}
+            <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-neon);">
+              <div class="d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="indicator-icon-badge" style="width: 42px; height: 42px; font-size: 1.05rem; color: var(--neon-green); border-color: rgba(57, 255, 20, 0.4); background: rgba(57, 255, 20, 0.1);">
+                    <i class="bi bi-basket3-fill"></i>
+                  </div>
+                  <div>
+                    <div class="fw-bold text-white" style="font-size: 0.92rem;">Cosecha {{ c.numero }}</div>
+                    <div class="text-muted" style="font-size: 0.78rem;">
+                      {{ c.fecha.strftime('%d/%m/%Y') if c.fecha else 'N/A' }}
+                      &middot; {{ c.cantidad_tipos }} tipo{{ 's' if c.cantidad_tipos != 1 else '' }}
+                      &middot; {{ c.kilos_total }} Kg
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div class="fw-bold text-white" style="font-size: 0.92rem;">{{ i.label }}</div>
-                  <div class="text-muted" style="font-size: 0.78rem;">
-                    {{ i.fecha.strftime('%d/%m/%Y') if i.fecha else 'N/A' }}
-                    {% if i.cantidad_canastillas %}
-                    &middot; {{ i.cantidad_canastillas|int }} canastillas &times; $ {{ i.precio_canastilla_fmt }} c/u
-                    {% elif i.descripcion %}
-                    &middot; {{ i.descripcion }}
-                    {% endif %}
+                <div class="d-flex align-items-center gap-3">
+                  <strong class="text-success" style="font-size: 0.95rem;">$ {{ c.valor_total_fmt }}</strong>
+                  <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#detalleCosecha{{ c.grupo_id }}" title="Ver detalle">
+                      <i class="bi bi-eye-fill"></i>
+                    </button>
+                    <a href="{{ url_for('ingresos.cosecha_editar', id=cultivo.idCultivo, grupo_id=c.grupo_id) }}" class="btn btn-sm btn-outline-warning" title="Editar">
+                      <i class="bi bi-pencil-fill"></i>
+                    </a>
+                    <form action="{{ url_for('ingresos.cosecha_eliminar', id=cultivo.idCultivo, grupo_id=c.grupo_id) }}" method="POST"
+                      onsubmit="return confirm('¿Eliminar esta cosecha completa? Se borrarán todos sus tipos registrados.');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </form>
                   </div>
                 </div>
               </div>
-              <div class="d-flex align-items-center gap-3">
-                <strong class="text-success" style="font-size: 0.95rem;">$ {{ i.valor_fmt }}</strong>
-                <form action="{{ url_for('ingresos.eliminar', id=cultivo.idCultivo, ingreso_id=i.id) }}" method="POST"
-                  onsubmit="return confirm('¿Eliminar este ingreso registrado?');">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash3"></i>
-                  </button>
-                </form>
+
+              <div class="collapse mt-3" id="detalleCosecha{{ c.grupo_id }}">
+                <div class="d-flex flex-column gap-2 pt-2 border-top border-secondary border-opacity-25">
+                  {% for t in c.tipos %}
+                  <div class="d-flex align-items-center justify-content-between" style="font-size: 0.82rem;">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi {{ t.icon }}" style="color: {{ t.color }};"></i>
+                      <span class="text-white">{{ t.label }}</span>
+                      <span class="text-muted">
+                        &middot; {{ t.cantidad_canastillas|int }} canastillas &times; $ {{ t.precio_canastilla_fmt }} c/u &times; {{ t.peso_canastilla|round(1) }} Kg c/u
+                      </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="text-info">{{ t.kilos }} Kg</span>
+                      <span class="text-success fw-bold">$ {{ t.valor_fmt }}</span>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
               </div>
             </div>
             {% endfor %}
           </div>
+
+          {% if total_paginas > 1 %}
+          <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top border-secondary border-opacity-25">
+            {% if pagina_actual > 1 %}
+            <a href="{{ url_for('ingresos.ver', id=cultivo.idCultivo, pagina=pagina_actual - 1) }}" class="btn btn-sm btn-neon-outline">
+              <i class="bi bi-arrow-left me-1"></i> Anterior
+            </a>
+            {% else %}
+            <span class="btn btn-sm btn-outline-secondary disabled">
+              <i class="bi bi-arrow-left me-1"></i> Anterior
+            </span>
+            {% endif %}
+
+            <span class="text-muted" style="font-size: 0.82rem;">Página {{ pagina_actual }} de {{ total_paginas }}</span>
+
+            {% if pagina_actual < total_paginas %}
+            <a href="{{ url_for('ingresos.ver', id=cultivo.idCultivo, pagina=pagina_actual + 1) }}" class="btn btn-sm btn-neon-outline">
+              Siguiente <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+            {% else %}
+            <span class="btn btn-sm btn-outline-secondary disabled">
+              Siguiente <i class="bi bi-arrow-right ms-1"></i>
+            </span>
+            {% endif %}
+          </div>
+          {% endif %}
           {% else %}
           <div class="text-center py-5">
             <i class="bi bi-receipt-cutoff text-muted" style="font-size: 2.5rem;"></i>
@@ -312,21 +367,31 @@
 
   function actualizarSubtotalesCogida() {
     let total = 0;
+    let kilosTotal = 0;
 
     ['grueso', 'parejo', 'riche'].forEach((tipo) => {
       const cantidad = parseFloat(document.getElementById('cantidad_' + tipo).value) || 0;
       const precio = parseFloat(document.getElementById('precio_' + tipo).value) || 0;
+      const peso = parseFloat(document.getElementById('peso_' + tipo).value) || 0;
+
       const subtotal = cantidad * precio;
+      const kilos = cantidad * peso;
+
       const elSubtotal = document.getElementById('subtotal_' + tipo);
       if (elSubtotal) elSubtotal.textContent = '$ ' + formatoMoneda(subtotal);
-      total += subtotal;
-    });
 
-    const valorOtro = parseFloat(document.getElementById('valor_otro').value) || 0;
-    total += valorOtro;
+      const elKilos = document.getElementById('kilos_' + tipo);
+      if (elKilos) elKilos.textContent = kilos.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' Kg';
+
+      total += subtotal;
+      kilosTotal += kilos;
+    });
 
     const elTotal = document.getElementById('totalCogida');
     if (elTotal) elTotal.textContent = '$ ' + formatoMoneda(total);
+
+    const elKilosTotal = document.getElementById('kilosTotal');
+    if (elKilosTotal) elKilosTotal.textContent = kilosTotal.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' Kg';
   }
 
   document.addEventListener('DOMContentLoaded', () => {
