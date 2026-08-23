@@ -1,10 +1,30 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from sqlalchemy import text
 import os
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+
+
+def _asegurar_columnas(tabla, columnas):
+    """
+    Migración liviana para SQLite: si la tabla ya existía (creada antes de
+    agregar nuevas columnas al modelo), agrega las columnas que falten sin
+    borrar los datos existentes. db.create_all() no altera tablas que ya
+    existen, así que esto cubre ese caso.
+    columnas: lista de tuplas (nombre_columna, tipo_sql), ej: [('valor', 'FLOAT')]
+    """
+    existentes = [fila[1] for fila in db.session.execute(text(f'PRAGMA table_info("{tabla}")')).fetchall()]
+    if not existentes:
+        return  # la tabla aún no existe; db.create_all() ya se encarga de crearla completa
+
+    for nombre_columna, tipo_sql in columnas:
+        if nombre_columna not in existentes:
+            db.session.execute(text(f'ALTER TABLE "{tabla}" ADD COLUMN {nombre_columna} {tipo_sql}'))
+
+    db.session.commit()
 
 def create_app():
 
@@ -21,13 +41,17 @@ def create_app():
 
     # Register blueprints
     from app.routes import (
-        users_route, auth, users_route_async, cultivos_route
+        users_route, auth, users_route_async, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route
     )
-    
+
     app.register_blueprint(auth.bp)
     app.register_blueprint(users_route.bp)
     app.register_blueprint(users_route_async.bp)
     app.register_blueprint(cultivos_route.bp)
+    app.register_blueprint(calendario_route.bp)
+    app.register_blueprint(gastos_route.bp)
+    app.register_blueprint(ingresos_route.bp)
+    app.register_blueprint(pagos_route.bp)
 
     @app.errorhandler(Exception)
     def handle_error(e):
@@ -37,6 +61,17 @@ def create_app():
     with app.app_context():
         try:
             db.create_all()
+
+            # Migración liviana: agrega columnas nuevas a tablas que ya
+            # existían en la base de datos del usuario (creadas con una
+            # versión anterior del modelo), sin perder datos.
+            _asegurar_columnas('ingresos_cultivo', [
+                ('cantidad_canastillas', 'FLOAT'),
+                ('precio_canastilla', 'FLOAT'),
+                ('monto_pagado', 'FLOAT DEFAULT 0'),
+                ('fecha_pago', 'DATE'),
+            ])
+
             from app.models.users import User
             from app.models.cultivo import Cultivo
 

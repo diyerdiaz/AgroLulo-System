@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Pagos - {{ cultivo.nombre }}{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<!-- Esferas de luz neón de fondo -->
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="dashboard-wrapper dashboard-wrapper-auto">
+
+  <!-- Sidebar Lateral Izquierda Fija -->
+  <aside id="sidebarLulo" class="sidebar-lulo">
+    <div class="mb-2">
+      <button type="button" class="btn-toggle-menu" onclick="toggleSidebar()" aria-label="Alternar Menú">
+        <i class="bi bi-list"></i>
+        <span class="sidebar-nav-content fw-bold text-white fs-6">Menú</span>
+      </button>
+    </div>
+
+    <div class="sidebar-nav-content d-flex flex-column h-100">
+      <div class="text-center pb-3 my-2 border-bottom border-secondary border-opacity-25">
+        <div class="brand-logo-badge mx-auto mb-2" style="width: 44px; height: 44px; font-size: 1.2rem;">
+          <i class="bi bi-tree-fill"></i>
+        </div>
+        <div class="sidebar-brand-title">
+          AgroLulo <span>System</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu list-unstyled flex-grow-1">
+        <li>
+          <a href="{{ url_for('auth.dashboard') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-speedometer2"></i>
+            </div>
+            <span>Dashboard General</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-sprout-fill"></i>
+            </div>
+            <span>Registro de Cultivos</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('calendario.index') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #8338ec; border-color: rgba(131, 56, 236, 0.3);">
+              <i class="bi bi-calendar3-fill"></i>
+            </div>
+            <span>Calendario</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('ingresos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <span>Ingresos</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('gastos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+              <i class="bi bi-dash-circle-fill"></i>
+            </div>
+            <span class="sidebar-link-text-wrap">Gastos del Cultivo de Lulo</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('pagos.index') }}" class="sidebar-link active">
+            <div class="nav-icon-box" style="color: #06d6a0; border-color: rgba(6, 214, 160, 0.3);">
+              <i class="bi bi-patch-check-fill"></i>
+            </div>
+            <span>Pagos</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
+          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+          <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
+            current_user.nameUser }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
+          <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+            <i class="bi bi-box-arrow-right"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Área Principal de Contenido: Pagos del Cultivo -->
+  <main class="main-content-lulo main-content-lulo-auto">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
+      <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Encabezado de la Página -->
+    <div class="dash-card mb-4">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <div class="lulo-badge mb-2">
+            <i class="bi bi-patch-check-fill"></i> Módulo Financiero
+          </div>
+          <h1 class="fw-bold text-white mb-2 fs-2">
+            Pagos de <span>{{ cultivo.nombre }}</span>
+          </h1>
+          <p class="text-muted mb-0">
+            Registra los pagos que te hacen por cada cosecha y revisa cuáles siguen pendientes.
+          </p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('pagos.index') }}" class="btn btn-neon-outline px-3 py-2">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Pagos
+          </a>
+          <a href="{{ url_for('ingresos.ver', id=cultivo.idCultivo) }}" class="btn btn-neon-outline px-3 py-2">
+            <i class="bi bi-cash-stack me-1"></i> Ver Ingresos
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="indicator-card py-3">
+          <div class="indicator-title">Esperado</div>
+          <div class="fs-4 fw-bold text-white">$ {{ esperado_fmt }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="indicator-card py-3" style="border-color: var(--neon-green);">
+          <div class="indicator-title" style="color: var(--neon-green);">Recibido</div>
+          <div class="fs-4 fw-bold text-success">$ {{ recibido_fmt }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="indicator-card py-3">
+          <div class="indicator-title">Pendiente</div>
+          <div class="fs-4 fw-bold {{ 'text-warning' if hay_pendientes else 'text-muted' }}">$ {{ pendiente_fmt }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Formulario: Registrar Pago -->
+      <div class="col-lg-5">
+        <div class="indicator-card h-100">
+          <h4 class="fw-bold text-white mb-1 fs-5">
+            <i class="bi bi-cash-coin me-2" style="color: var(--neon-green);"></i> Registrar Pago
+          </h4>
+          <p class="text-muted mb-3" style="font-size: 0.8rem;">
+            El pago se aplica primero a la cosecha pendiente más antigua. Si pagas de más, el sobrante se abona automáticamente a la siguiente cosecha pendiente.
+          </p>
+
+          <form action="{{ url_for('pagos.registrar_pago', id=cultivo.idCultivo) }}" method="POST" class="row g-3">
+            <div class="col-12">
+              <label for="monto" class="form-neon-label mb-1">Monto Pagado ($)</label>
+              <div class="input-group-neon">
+                <span class="input-group-text"><i class="bi bi-cash"></i></span>
+                <input type="number" id="monto" name="monto" class="form-control" min="1" step="1" placeholder="Ej: 4000000" required>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label for="fecha_pago" class="form-neon-label mb-1">Día del Pago</label>
+              <div class="input-group-neon">
+                <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="col-12 mt-2">
+              <button type="submit" class="btn btn-neon-primary w-100 py-2.5 fw-bold text-dark" style="font-size: 0.95rem;">
+                <i class="bi bi-check-lg me-1"></i> Guardar Pago
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Listado de cosechas y su estado de pago -->
+      <div class="col-lg-7">
+        <div class="indicator-card h-100">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <h4 class="fw-bold text-white mb-0 fs-5">
+              <i class="bi bi-basket3-fill me-2" style="color: var(--neon-green);"></i> Cosechas
+            </h4>
+            <span class="badge bg-dark border border-secondary text-light px-3 py-2">
+              {{ filas|length }} registrada(s)
+            </span>
+          </div>
+
+          {% if filas %}
+          <div class="d-flex flex-column gap-3" style="max-height: 560px; overflow-y: auto;">
+            {% for f in filas %}
+            <div class="p-3 rounded-3"
+              style="background: rgba(255, 255, 255, 0.02); border: 1px solid {{ 'var(--border-neon)' if f.esta_pagada else 'rgba(255, 183, 3, 0.35)' }};">
+              <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-2">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="indicator-icon-badge" style="width: 40px; height: 40px; font-size: 1rem; color: {{ f.color }}; border-color: {{ f.color }}66; background: {{ f.color }}1a;">
+                    <i class="bi {{ f.icon }}"></i>
+                  </div>
+                  <div>
+                    <div class="fw-bold text-white" style="font-size: 0.92rem;">{{ f.label }}</div>
+                    <div class="text-muted" style="font-size: 0.78rem;">
+                      Cosecha: {{ f.fecha.strftime('%d/%m/%Y') if f.fecha else 'N/A' }}
+                      {% if f.cantidad_canastillas %}
+                      &middot; {{ f.cantidad_canastillas|int }} canastillas &times; $ {{ f.precio_canastilla_fmt }} c/u
+                      {% elif f.descripcion %}
+                      &middot; {{ f.descripcion }}
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                <strong class="text-white" style="font-size: 0.95rem;">$ {{ f.valor_fmt }}</strong>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-25">
+                {% if f.esta_pagada %}
+                <span class="badge bg-success bg-opacity-25 text-success px-2 py-2" style="font-size: 0.75rem;">
+                  <i class="bi bi-check-circle-fill me-1"></i> Pagada el {{ f.fecha_pago.strftime('%d/%m/%Y') if f.fecha_pago else 'N/A' }}
+                </span>
+                <span class="text-muted" style="font-size: 0.78rem;">Recibiste: <strong class="text-success">$ {{ f.pagado_fmt }}</strong></span>
+                {% else %}
+                <span class="badge bg-warning bg-opacity-25 text-warning px-2 py-2" style="font-size: 0.75rem;">
+                  <i class="bi bi-hourglass-split me-1"></i> Falta que te paguen $ {{ f.saldo_fmt }}
+                </span>
+                {% if f.pagado > 0 %}
+                <span class="text-muted" style="font-size: 0.78rem;">Abonado: <strong class="text-white">$ {{ f.pagado_fmt }}</strong> de $ {{ f.valor_fmt }}</span>
+                {% endif %}
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-basket text-muted" style="font-size: 2.5rem;"></i>
+            <p class="text-muted mt-3 mb-0">Este cultivo todavía no tiene cosechas registradas.</p>
+            <p class="text-muted" style="font-size: 0.85rem;">
+              Ve a <a href="{{ url_for('ingresos.ver', id=cultivo.idCultivo) }}" class="link-neon">Ingresos</a> para registrar la primera cosecha.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ÚNICO BOTÓN FLOTANTE DE RAYO -->
+<button type="button" id="btnThemeToggle" class="theme-lightning-btn" onclick="cycleThemeColor()"
+  aria-label="Cambiar Tema de Color" title="Cambiar Tema de Color">
+  <i class="bi bi-lightning-charge-fill"></i>
+</button>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebarLulo').classList.toggle('expanded');
+  }
+
+  const themesSequence = ['green', 'blue', 'orange'];
+  function cycleThemeColor() {
+    const currentTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    const nextTheme = themesSequence[(themesSequence.indexOf(currentTheme) + 1) % themesSequence.length];
+    setThemeColor(nextTheme);
+  }
+
+  function setThemeColor(themeName) {
+    document.body.classList.remove('theme-blue', 'theme-orange');
+    if (themeName !== 'green') document.body.classList.add('theme-' + themeName);
+    localStorage.setItem('agrolulo_theme', themeName);
+    if (window.updateCanvasTheme) window.updateCanvasTheme(themeName);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setThemeColor(localStorage.getItem('agrolulo_theme') || 'green');
+
+    // Fecha de hoy por defecto en el formulario de pago
+    const today = new Date().toISOString().split('T')[0];
+    const inputFecha = document.getElementById('fecha_pago');
+    if (inputFecha) inputFecha.value = today;
+  });
+</script>
+
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}

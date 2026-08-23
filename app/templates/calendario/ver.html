@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Calendario - {{ cultivo.nombre }}{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<!-- Esferas de luz neón de fondo -->
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="dashboard-wrapper dashboard-wrapper-auto">
+
+  <!-- Sidebar Lateral Izquierda Fija -->
+  <aside id="sidebarLulo" class="sidebar-lulo">
+    <div class="mb-2">
+      <button type="button" class="btn-toggle-menu" onclick="toggleSidebar()" aria-label="Alternar Menú">
+        <i class="bi bi-list"></i>
+        <span class="sidebar-nav-content fw-bold text-white fs-6">Menú</span>
+      </button>
+    </div>
+
+    <div class="sidebar-nav-content d-flex flex-column h-100">
+      <div class="text-center pb-3 my-2 border-bottom border-secondary border-opacity-25">
+        <div class="brand-logo-badge mx-auto mb-2" style="width: 44px; height: 44px; font-size: 1.2rem;">
+          <i class="bi bi-tree-fill"></i>
+        </div>
+        <div class="sidebar-brand-title">
+          AgroLulo <span>System</span>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu list-unstyled flex-grow-1">
+        <li>
+          <a href="{{ url_for('auth.dashboard') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-speedometer2"></i>
+            </div>
+            <span>Dashboard General</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-sprout-fill"></i>
+            </div>
+            <span>Registro de Cultivos</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('calendario.index') }}" class="sidebar-link active">
+            <div class="nav-icon-box" style="color: #8338ec; border-color: rgba(131, 56, 236, 0.3);">
+              <i class="bi bi-calendar3-fill"></i>
+            </div>
+            <span>Calendario</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('ingresos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <span>Ingresos</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('gastos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+              <i class="bi bi-dash-circle-fill"></i>
+            </div>
+            <span class="sidebar-link-text-wrap">Gastos del Cultivo de Lulo</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('pagos.index') }}" class="sidebar-link">
+            <div class="nav-icon-box" style="color: #06d6a0; border-color: rgba(6, 214, 160, 0.3);">
+              <i class="bi bi-patch-check-fill"></i>
+            </div>
+            <span>Pagos</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
+        <div class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill"
+          style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon);">
+          <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
+          <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{
+            current_user.nameUser }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="sidebar-link link-logout justify-content-center">
+          <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
+            <i class="bi bi-box-arrow-right"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Área Principal de Contenido: Calendario del Cultivo -->
+  <main class="main-content-lulo main-content-lulo-auto">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
+      <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Encabezado de la Página -->
+    <div class="dash-card mb-4">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <div class="lulo-badge mb-2">
+            <i class="bi bi-calendar3-fill"></i> Calendario del Cultivo
+          </div>
+          <h1 class="fw-bold text-white mb-2 fs-2">
+            {{ cultivo.nombre }} <span>({{ cultivo.hectareas }} Ha)</span>
+          </h1>
+          <p class="text-muted mb-0">
+            Vista mensual del cultivo <strong>{{ cultivo.nombre }}</strong>.
+          </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-neon-outline px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalTodasEtiquetas">
+            <i class="bi bi-tags-fill me-1" style="color: #8338ec;"></i> Ver Etiquetas
+          </button>
+          <a href="{{ url_for('calendario.index') }}" class="btn btn-neon-outline px-3 py-2">
+            <i class="bi bi-arrow-left me-1"></i> Volver al Calendario
+          </a>
+          <a href="{{ url_for('cultivos.dashboard', id=cultivo.idCultivo) }}" class="btn btn-neon-outline px-3 py-2">
+            <i class="bi bi-speedometer2 me-1"></i> Ver Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETA DEL CALENDARIO (columna angosta para que no ocupe todo el ancho) -->
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <div class="indicator-card">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <a href="{{ url_for('calendario.ver', id=cultivo.idCultivo, year=anio_anterior, month=mes_anterior) }}"
+              class="btn btn-sm btn-neon-outline px-3" aria-label="Mes anterior">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+            <h4 class="fw-bold text-white mb-0 fs-6 text-center">
+              {{ mes_nombre }} <span style="color: var(--neon-green);">{{ year }}</span>
+            </h4>
+            <a href="{{ url_for('calendario.ver', id=cultivo.idCultivo, year=anio_siguiente, month=mes_siguiente) }}"
+              class="btn btn-sm btn-neon-outline px-3" aria-label="Mes siguiente">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </div>
+
+          <div class="calendar-grid">
+            {% for dia_sem in dias_semana %}
+            <div class="calendar-day-header">{{ dia_sem }}</div>
+            {% endfor %}
+
+            {% for semana in semanas %}
+              {% for dia in semana %}
+                {% if dia == 0 %}
+                <div class="calendar-day calendar-day-empty"></div>
+                {% else %}
+                {% set fecha_iso = '%04d-%02d-%02d' % (year, month, dia) %}
+                <div class="calendar-day
+                  {% if year == hoy.year and month == hoy.month and dia == hoy.day %} calendar-day-today{% endif %}
+                  {% if dia in fechas_destacadas %} calendar-day-highlight{% endif %}"
+                  data-date="{{ fecha_iso }}"
+                  data-label="{{ dia }} de {{ mes_nombre }} de {{ year }}"
+                  onclick="abrirDiaModal(this)" role="button" tabindex="0">
+                  <span>{{ dia }}</span>
+                  <div class="calendar-day-tags" id="tags-{{ fecha_iso }}"></div>
+                </div>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </div>
+
+          <div class="d-flex flex-wrap gap-3 mt-3 pt-3 border-top border-secondary border-opacity-25" style="font-size: 0.78rem;">
+            <div class="d-flex align-items-center gap-2 text-muted">
+              <span class="calendar-legend-dot calendar-legend-dot-today"></span> Hoy
+            </div>
+            <div class="d-flex align-items-center gap-2 text-muted">
+              <span class="calendar-legend-dot calendar-legend-dot-highlight"></span> Fecha de sembrado
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-dark border-0 shadow-lg mt-3 mb-0" style="background: var(--bg-card); border-left: 4px solid var(--neon-green) !important; font-size: 0.85rem;">
+          <i class="bi bi-info-circle me-2" style="color: var(--neon-green);"></i>
+          Toca cualquier día del calendario de <strong>{{ cultivo.nombre }}</strong> para ver o agregar etiquetas: fumigación, trabajo, cosecha, riego, abono y más.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Etiquetas del día -->
+<div class="modal fade" id="modalDia" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-neon); border-radius: 16px;">
+      <div class="modal-header border-secondary border-opacity-25">
+        <h5 class="modal-title text-white mb-0">
+          <i class="bi bi-calendar-event me-2" style="color: var(--neon-green);"></i>
+          <span id="modalDiaFechaTexto"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modalDiaListaActividades" class="d-flex flex-column gap-2 mb-3"></div>
+        <p id="modalDiaVacio" class="text-muted text-center py-2 mb-3" style="font-size: 0.85rem;">
+          No hay etiquetas registradas este día.
+        </p>
+
+        <div class="dropdown">
+          <button class="btn btn-neon-outline w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plus-lg me-1"></i> Agregar Etiqueta
+          </button>
+          <ul class="dropdown-menu w-100" style="background: #0d130f; border: 1px solid var(--border-neon);">
+            {% for clave, meta in tipos_actividad.items() %}
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center gap-2 text-light py-2"
+                onclick="seleccionarTipoActividad('{{ clave }}', '{{ meta.label }}', '{{ meta.icon }}', '{{ meta.color }}')">
+                <i class="bi {{ meta.icon }}" style="color: {{ meta.color }}; width: 20px;"></i> {{ meta.label }}
+              </button>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <form id="formNuevaActividad" method="POST"
+          action="{{ url_for('calendario.agregar_actividad', id=cultivo.idCultivo) }}" class="d-none mt-3 pt-3 border-top border-secondary border-opacity-25">
+          <input type="hidden" name="fecha" id="inputFechaActividad">
+          <input type="hidden" name="tipo" id="inputTipoActividad">
+          <input type="hidden" name="year" value="{{ year }}">
+          <input type="hidden" name="month" value="{{ month }}">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi" id="iconoTipoSeleccionado" style="font-size: 1.3rem;"></i>
+            <strong class="text-white" id="textoTipoSeleccionado"></strong>
+          </div>
+          <textarea name="nota" class="form-control mb-2" rows="2" placeholder="Nota (opcional)"
+            style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-neon); color: #fff; font-size: 0.88rem;"></textarea>
+          <button type="submit" class="btn btn-neon-primary w-100">
+            <i class="bi bi-check-lg me-1"></i> Guardar Etiqueta
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Catálogo de etiquetas + historial completo del cultivo -->
+<div class="modal fade" id="modalTodasEtiquetas" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-neon); border-radius: 16px;">
+      <div class="modal-header border-secondary border-opacity-25">
+        <h5 class="modal-title text-white mb-0">
+          <i class="bi bi-tags-fill me-2" style="color: #8338ec;"></i>
+          Etiquetas de <strong>{{ cultivo.nombre }}</strong>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+
+        <h6 class="text-uppercase text-muted mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+          <i class="bi bi-collection me-1"></i> Tipos de etiqueta disponibles
+        </h6>
+        <div class="d-flex flex-wrap gap-2 mb-4 pb-4 border-bottom border-secondary border-opacity-25">
+          {% for clave, meta in tipos_actividad.items() %}
+          <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill"
+            style="background: {{ meta.color }}1f; border: 1px solid {{ meta.color }}66; color: {{ meta.color }}; font-size: 0.82rem; font-weight: 600;">
+            <i class="bi {{ meta.icon }}"></i> {{ meta.label }}
+          </span>
+          {% endfor %}
+        </div>
+
+        <h6 class="text-uppercase text-muted mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+          <i class="bi bi-clock-history me-1"></i> Etiquetas registradas ({{ todas_actividades|length }})
+        </h6>
+
+        {% if todas_actividades %}
+        <div class="d-flex flex-column gap-2" style="max-height: 320px; overflow-y: auto;">
+          {% for a in todas_actividades %}
+          <div class="d-flex align-items-start justify-content-between gap-2 p-2 rounded"
+            style="background: rgba(255,255,255,0.03); border: 1px solid {{ a.color }}55;">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi {{ a.icon }}" style="color: {{ a.color }}; font-size: 1.1rem; margin-top: 2px;"></i>
+              <div>
+                <div class="fw-bold text-white" style="font-size: 0.88rem;">
+                  {{ a.label }}
+                  <span class="text-muted fw-normal">· {{ a.fecha.strftime('%d/%m/%Y') }}</span>
+                </div>
+                {% if a.nota %}
+                <div class="text-muted" style="font-size: 0.8rem;">{{ a.nota }}</div>
+                {% endif %}
+              </div>
+            </div>
+            {% if a.eliminable %}
+            <form method="POST" action="{{ url_for('calendario.eliminar_actividad', id=cultivo.idCultivo, actividad_id=a.id) }}"
+              onsubmit="return confirm('¿Eliminar esta etiqueta del calendario?');">
+              <input type="hidden" name="year" value="{{ a.fecha.year }}">
+              <input type="hidden" name="month" value="{{ a.fecha.month }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Eliminar">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-3 mb-0" style="font-size: 0.85rem;">
+          Aún no hay etiquetas registradas para este cultivo.
+        </p>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Formulario oculto reutilizado para eliminar una etiqueta -->
+<form id="formEliminarActividad" method="POST" class="d-none">
+  <input type="hidden" name="year" value="{{ year }}">
+  <input type="hidden" name="month" value="{{ month }}">
+</form>
+
+<!-- ÚNICO BOTÓN FLOTANTE DE RAYO -->
+<button type="button" id="btnThemeToggle" class="theme-lightning-btn" onclick="cycleThemeColor()"
+  aria-label="Cambiar Tema de Color" title="Cambiar Tema de Color">
+  <i class="bi bi-lightning-charge-fill"></i>
+</button>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebarLulo').classList.toggle('expanded');
+  }
+
+  const themesSequence = ['green', 'blue', 'orange'];
+  function cycleThemeColor() {
+    const currentTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    const nextTheme = themesSequence[(themesSequence.indexOf(currentTheme) + 1) % themesSequence.length];
+    setThemeColor(nextTheme);
+  }
+
+  function setThemeColor(themeName) {
+    document.body.classList.remove('theme-blue', 'theme-orange');
+    if (themeName !== 'green') document.body.classList.add('theme-' + themeName);
+    localStorage.setItem('agrolulo_theme', themeName);
+    if (window.updateCanvasTheme) window.updateCanvasTheme(themeName);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setThemeColor(localStorage.getItem('agrolulo_theme') || 'green');
+  });
+
+  // ===== Etiquetas del calendario (fumigación, trabajo, cosecha, etc.) =====
+  const actividadesPorDia = {{ actividades_por_dia_json|safe }};
+  const urlEliminarBase = "{{ url_for('calendario.ver', id=cultivo.idCultivo) }}/actividad";
+  let modalDiaInstance = null;
+
+  function pintarPuntosDelDia(fechaIso) {
+    const contenedor = document.getElementById('tags-' + fechaIso);
+    if (!contenedor) return;
+    const actividades = actividadesPorDia[fechaIso] || [];
+    contenedor.innerHTML = '';
+    actividades.slice(0, 4).forEach(a => {
+      const punto = document.createElement('span');
+      punto.className = 'calendar-day-tag-dot';
+      punto.style.background = a.color;
+      punto.title = a.label;
+      contenedor.appendChild(punto);
+    });
+  }
+
+  function pintarTodosLosPuntos() {
+    Object.keys(actividadesPorDia).forEach(pintarPuntosDelDia);
+  }
+
+  function seleccionarTipoActividad(clave, label, icono, color) {
+    document.getElementById('inputTipoActividad').value = clave;
+    document.getElementById('textoTipoSeleccionado').textContent = label;
+    const icon = document.getElementById('iconoTipoSeleccionado');
+    icon.className = 'bi ' + icono;
+    icon.style.color = color;
+    document.getElementById('formNuevaActividad').classList.remove('d-none');
+  }
+
+  function eliminarActividad(actividadId) {
+    if (!confirm('¿Eliminar esta etiqueta del calendario?')) return;
+    const form = document.getElementById('formEliminarActividad');
+    form.action = urlEliminarBase + '/' + actividadId + '/eliminar';
+    form.submit();
+  }
+
+  function abrirDiaModal(el) {
+    const fechaIso = el.dataset.date;
+    const label = el.dataset.label;
+    document.getElementById('modalDiaFechaTexto').textContent = label;
+    document.getElementById('inputFechaActividad').value = fechaIso;
+
+    const formNueva = document.getElementById('formNuevaActividad');
+    formNueva.classList.add('d-none');
+    document.getElementById('inputTipoActividad').value = '';
+    formNueva.querySelector('textarea[name="nota"]').value = '';
+
+    const lista = document.getElementById('modalDiaListaActividades');
+    const vacio = document.getElementById('modalDiaVacio');
+    lista.innerHTML = '';
+
+    const actividades = actividadesPorDia[fechaIso] || [];
+    if (actividades.length === 0) {
+      vacio.classList.remove('d-none');
+    } else {
+      vacio.classList.add('d-none');
+      actividades.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'd-flex align-items-start justify-content-between gap-2 p-2 rounded';
+        item.style.background = 'rgba(255,255,255,0.03)';
+        item.style.border = '1px solid ' + a.color + '55';
+
+        const izquierda = document.createElement('div');
+        izquierda.className = 'd-flex align-items-start gap-2';
+        izquierda.innerHTML =
+          '<i class="bi ' + a.icon + '" style="color:' + a.color + '; font-size:1.1rem; margin-top:2px;"></i>' +
+          '<div><div class="fw-bold text-white" style="font-size:0.88rem;">' + a.label + '</div>' +
+          (a.nota ? '<div class="text-muted" style="font-size:0.8rem;">' + a.nota + '</div>' : '') +
+          '</div>';
+        item.appendChild(izquierda);
+
+        if (a.eliminable) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-sm btn-outline-danger py-0 px-2';
+          btn.innerHTML = '<i class="bi bi-x-lg"></i>';
+          btn.onclick = () => eliminarActividad(a.id);
+          item.appendChild(btn);
+        }
+
+        lista.appendChild(item);
+      });
+    }
+
+    if (!modalDiaInstance) {
+      modalDiaInstance = new bootstrap.Modal(document.getElementById('modalDia'));
+    }
+    modalDiaInstance.show();
+  }
+
+  document.addEventListener('DOMContentLoaded', pintarTodosLosPuntos);
+</script>
+
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}
