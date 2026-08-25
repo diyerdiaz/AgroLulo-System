@@ -4,6 +4,7 @@ from app.models.users import User
 from app.models.cultivo import Cultivo
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.ingreso import IngresoCultivo
+from app.models.actividad import ActividadCultivo
 from app import db
 from datetime import date
 
@@ -14,6 +15,11 @@ MESES_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'
 # Paleta de colores que se reparte entre los cultivos reales en los gráficos
 # (antes el Dashboard tenía 4 cultivos y colores fijos "de mentira").
 PALETA_CULTIVOS = ['#39ff14', '#4cc9f0', '#ffb703', '#b5179e', '#ff4d4d', '#06d6a0', '#8338ec', '#f72585']
+
+
+def _formato_moneda(valor):
+    """Da formato de moneda colombiana: separador de miles con punto, sin decimales."""
+    return f"{valor:,.0f}".replace(',', '.')
 
 @bp.route('/', methods=['GET', 'POST'])
 def login():
@@ -234,7 +240,153 @@ def usuarios():
         return redirect(url_for('auth.dashboard'))
 
     usuarios = User.query.order_by(User.idUser.asc()).all()
-    return render_template('usuarios.html', usuarios=usuarios)
+    pagina_solicitada = request.args.get('pagina', 1, type=int)
+    usuarios_pagina, pagina_actual, total_paginas = _paginar_usuarios(
+        usuarios, pagina_solicitada, USUARIOS_LISTA_POR_PAGINA
+    )
+    return render_template(
+        'usuarios.html',
+        usuarios=usuarios_pagina,
+        total_usuarios=len(usuarios),
+        pagina_actual=pagina_actual,
+        total_paginas=total_paginas,
+    )
+
+
+@bp.route('/usuarios/crear', methods=['POST'])
+@login_required
+def usuario_crear():
+    """Crea una cuenta nueva directamente desde el panel de Usuarios.
+    A diferencia del registro público (que deja la cuenta bloqueada
+    esperando activación), esta cuenta la crea el propio administrador,
+    así que queda activa de inmediato. Solo el administrador puede
+    hacerlo."""
+    if not current_user.isAdmin:
+        flash('Solo el administrador puede crear cuentas.', 'danger')
+        return redirect(url_for('auth.dashboard'))
+
+    nameUser = request.form.get('nameUser', '').strip()
+    passwordUser = request.form.get('passwordUser', '')
+
+    if not nameUser or not passwordUser:
+        flash('Debes escribir un nombre de usuario y una contraseña para crear la cuenta.', 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    ya_existe = User.query.filter_by(nameUser=nameUser).first()
+    if ya_existe:
+        flash(f"Ya existe una cuenta con el nombre de usuario '{nameUser}'.", 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    nuevo_usuario = User(nameUser=nameUser, isAdmin=False, activo=True)
+    nuevo_usuario.set_password(passwordUser)
+    db.session.add(nuevo_usuario)
+    db.session.commit()
+
+    flash(f"La cuenta '{nameUser}' fue creada y ya está activa. Puede iniciar sesión de inmediato.", 'success')
+    return redirect(url_for('auth.usuarios'))
+
+
+# Tamaño de página para la tabla de "Usuarios Registrados": el usuario pidió
+# que aparezcan los botones Anterior/Siguiente justo al llegar a 10 cuentas,
+# así que con 9 por página, la cuenta número 10 ya no cabe y activa la
+# paginación (mismo criterio ya usado en Estadísticas de Usuarios).
+USUARIOS_LISTA_POR_PAGINA = 9
+
+# Tamaño de página para el resumen de Estadísticas de Usuarios (se activa
+# al llegar a 4 cuentas).
+USUARIOS_POR_PAGINA = 3
+
+
+def _paginar_usuarios(lista, pagina_solicitada, por_pagina=USUARIOS_POR_PAGINA):
+    """Recorta una lista de cuentas/resúmenes a la página pedida, y
+    devuelve en qué página quedó realmente y cuántas hay en total, para
+    pintar los botones de Anterior/Siguiente (mismo patrón que ya se usa
+    en Ingresos/Pagos) en vez de una lista larga y desordenada."""
+    total = len(lista)
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+    pagina = max(1, min(pagina_solicitada or 1, total_paginas))
+    inicio = (pagina - 1) * por_pagina
+    return lista[inicio:inicio + por_pagina], pagina, total_paginas
+
+
+@bp.route('/usuarios/estadisticas')
+@login_required
+def estadisticas_usuarios():
+    """Un pequeño resumen, por cada cuenta registrada, de sus cultivos:
+    cuántos tiene, cuántas hectáreas, cuánto ha registrado en ingresos,
+    gastos y ganancias, cuánto ha producido en Kg, y el detalle de cada
+    uno de sus lotes por separado. Solo la cuenta administradora la ve."""
+    if not current_user.isAdmin:
+        flash('Solo el administrador puede ver esa sección.', 'danger')
+        return redirect(url_for('auth.dashboard'))
+
+    usuarios = User.query.order_by(User.idUser.asc()).all()
+    resumen = []
+
+    for u in usuarios:
+        cultivos = Cultivo.query.filter_by(idUser=u.idUser).order_by(Cultivo.idCultivo.desc()).all()
+
+        total_hectareas = 0.0
+        total_ingresos = 0.0
+        total_gastos = 0.0
+        total_produccion = 0.0
+        detalle_cultivos = []
+
+        for c in cultivos:
+            ingresos_c = db.session.query(
+                db.func.coalesce(db.func.sum(IngresoCultivo.valor), 0.0)
+            ).filter(IngresoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
+            gastos_c = db.session.query(
+                db.func.coalesce(db.func.sum(GastoCultivo.valor), 0.0)
+            ).filter(GastoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
+            produccion_c = db.session.query(
+                db.func.coalesce(db.func.sum(IngresoCultivo.cantidad_canastillas * IngresoCultivo.peso_canastilla), 0.0)
+            ).filter(IngresoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
+
+            total_hectareas += c.hectareas or 0.0
+            total_ingresos += ingresos_c
+            total_gastos += gastos_c
+            total_produccion += produccion_c
+
+            detalle_cultivos.append({
+                'nombre': c.nombre,
+                'hectareas': c.hectareas or 0.0,
+                'fecha_sembrado': c.fecha_sembrado,
+                'ingresos': ingresos_c,
+                'ingresos_fmt': _formato_moneda(ingresos_c),
+                'gastos': gastos_c,
+                'gastos_fmt': _formato_moneda(gastos_c),
+                'ganancias': ingresos_c - gastos_c,
+                'ganancias_fmt': _formato_moneda(ingresos_c - gastos_c),
+                'produccion': produccion_c,
+            })
+
+        total_ganancias = total_ingresos - total_gastos
+        resumen.append({
+            'usuario': u,
+            'total_ingresos_fmt': _formato_moneda(total_ingresos),
+            'total_gastos_fmt': _formato_moneda(total_gastos),
+            'total_ganancias_fmt': _formato_moneda(total_ganancias),
+            'num_cultivos': len(cultivos),
+            'total_hectareas': total_hectareas,
+            'total_ingresos': total_ingresos,
+            'total_gastos': total_gastos,
+            'total_ganancias': total_ingresos - total_gastos,
+            'total_produccion': total_produccion,
+            'cultivos': detalle_cultivos,
+        })
+
+    pagina_solicitada = request.args.get('pagina', 1, type=int)
+    resumen_pagina, pagina_actual, total_paginas = _paginar_usuarios(
+        resumen, pagina_solicitada, USUARIOS_POR_PAGINA
+    )
+
+    return render_template(
+        'estadisticas_usuarios.html',
+        resumen=resumen_pagina,
+        pagina_actual=pagina_actual,
+        total_paginas=total_paginas,
+    )
 
 
 @bp.route('/usuarios/<int:id>/activar', methods=['POST'])
@@ -271,6 +423,42 @@ def usuario_bloquear(id):
     usuario.activo = False
     db.session.commit()
     flash(f"La cuenta '{usuario.nameUser}' fue bloqueada.", 'info')
+    return redirect(url_for('auth.usuarios'))
+
+
+@bp.route('/usuarios/<int:id>/eliminar', methods=['POST'])
+@login_required
+def usuario_eliminar(id):
+    """Elimina por completo una cuenta y todo lo que haya registrado bajo
+    ella (sus cultivos, y los ingresos, gastos, pagos y actividades del
+    calendario de esos cultivos). Es irreversible. Solo el administrador
+    puede hacerlo, y no se puede eliminar a sí mismo."""
+    if not current_user.isAdmin:
+        flash('Solo el administrador puede eliminar cuentas.', 'danger')
+        return redirect(url_for('auth.dashboard'))
+
+    if id == current_user.idUser:
+        flash('No puedes eliminar tu propia cuenta.', 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    usuario = User.query.get_or_404(id)
+    nombre = usuario.nameUser
+
+    # Se borra primero todo lo que dependa de cada cultivo de esta cuenta
+    # (igual que al eliminar un cultivo desde Cultivos), y luego los
+    # cultivos mismos, para no dejar registros huérfanos en la base de
+    # datos antes de borrar la cuenta.
+    ids_cultivos = [c.idCultivo for c in Cultivo.query.filter_by(idUser=usuario.idUser).all()]
+    if ids_cultivos:
+        IngresoCultivo.query.filter(IngresoCultivo.idCultivo.in_(ids_cultivos)).delete(synchronize_session=False)
+        GastoCultivo.query.filter(GastoCultivo.idCultivo.in_(ids_cultivos)).delete(synchronize_session=False)
+        ActividadCultivo.query.filter(ActividadCultivo.idCultivo.in_(ids_cultivos)).delete(synchronize_session=False)
+        Cultivo.query.filter(Cultivo.idCultivo.in_(ids_cultivos)).delete(synchronize_session=False)
+
+    db.session.delete(usuario)
+    db.session.commit()
+
+    flash(f"La cuenta '{nombre}' y todos sus datos fueron eliminados permanentemente.", 'info')
     return redirect(url_for('auth.usuarios'))
 
 @bp.route('/pruebajs')
