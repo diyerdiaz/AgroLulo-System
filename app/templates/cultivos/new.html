@@ -44,7 +44,7 @@
         <li>
           <a href="{{ url_for('cultivos.index') }}" class="sidebar-link active">
             <div class="nav-icon-box">
-              <i class="bi bi-sprout-fill"></i>
+              <i class="bi bi-tree-fill"></i>
             </div>
             <span>Registro de Cultivos</span>
           </a>
@@ -118,13 +118,26 @@
 
   <!-- Área Principal de Contenido -->
   <main class="main-content-lulo main-content-lulo-auto">
+
+    <!-- Encabezado Móvil para Pantallas Pequeñas -->
+    <div class="mobile-nav-header">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">System</span></span>
+      </div>
+      <span class="badge bg-dark border border-success text-success">
+        <i class="bi bi-person-circle me-1"></i> {{ current_user.nameUser }}
+      </span>
+    </div>
     
     <!-- Encabezado de la Página -->
     <div class="dash-card mb-4">
       <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
         <div>
           <div class="lulo-badge mb-2">
-            <i class="bi bi-sprout-fill"></i> Formulario de Registro
+            <i class="bi bi-tree-fill"></i> Formulario de Registro
           </div>
           <h1 class="fw-bold text-white mb-2 fs-2">
             Registrar Nuevo <span>Cultivo</span>
@@ -164,19 +177,19 @@
             <div class="col-md-4">
               <label for="hectareas" class="form-neon-label mb-1">Hectáreas del Cultivo (Ha)</label>
               <div class="input-group-neon">
-                <span class="input-group-text"><i class="bi bi-landscape"></i></span>
+                <span class="input-group-text"><i class="bi bi-map-fill"></i></span>
                 <input type="number" id="hectareas" name="hectareas" step="0.1" min="0.1" class="form-control" placeholder="Ej: 3.5" required>
               </div>
             </div>
 
-            <!-- Plantas de Lulo Estimadas (calculado en vivo, no se envía al servidor) -->
+            <!-- Plantas de Lulo: se sugiere un estimado según las hectáreas, pero se puede editar con la cantidad real -->
             <div class="col-md-4">
-              <label for="plantasEstimadas" class="form-neon-label mb-1">Plantas de Lulo (aprox.)</label>
+              <label for="plantasEstimadas" class="form-neon-label mb-1">Plantas de Lulo</label>
               <div class="input-group-neon">
                 <span class="input-group-text"><i class="bi bi-flower1"></i></span>
-                <input type="text" id="plantasEstimadas" class="form-control" value="0" readonly tabindex="-1">
+                <input type="number" id="plantasEstimadas" name="plantas" min="0" step="1" class="form-control" value="0">
               </div>
-              <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Estimado a ~680 plantas por hectárea</small>
+              <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Se sugiere ~680 plantas por hectárea, pero puedes escribir la cantidad real de matas.</small>
             </div>
 
             <!-- Fecha de Sembrado -->
@@ -237,22 +250,27 @@
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('fecha_sembrado').value = today;
 
-    // Estimar en vivo cuántas plantas de lulo caben según las hectáreas
-    // (misma referencia usada en el servidor: ~680 plantas por hectárea)
+    // Sugerir en vivo cuántas plantas de lulo caben según las hectáreas
+    // (misma referencia usada en el servidor: ~680 plantas por hectárea).
+    // Es solo una sugerencia: en cuanto la persona escribe su propio valor
+    // en el campo de plantas, se deja de pisar con el cálculo automático.
     const PLANTAS_POR_HECTAREA = 680;
     const inputHectareas = document.getElementById('hectareas');
     const inputPlantas = document.getElementById('plantasEstimadas');
+    let plantasEditadoManual = false;
 
-    function actualizarPlantasEstimadas() {
+    function sugerirPlantasEstimadas() {
+      if (plantasEditadoManual) return;
       const hectareas = parseFloat(inputHectareas.value);
       const plantas = (!isNaN(hectareas) && hectareas > 0)
         ? Math.round(hectareas * PLANTAS_POR_HECTAREA)
         : 0;
-      inputPlantas.value = plantas.toLocaleString('es-CO');
+      inputPlantas.value = plantas;
     }
 
-    inputHectareas.addEventListener('input', actualizarPlantasEstimadas);
-    actualizarPlantasEstimadas();
+    inputPlantas.addEventListener('input', () => { plantasEditadoManual = true; });
+    inputHectareas.addEventListener('input', sugerirPlantasEstimadas);
+    sugerirPlantasEstimadas();
   });
 </script>
 

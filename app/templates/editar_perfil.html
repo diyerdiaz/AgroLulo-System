@@ -44,7 +44,7 @@
         <li>
           <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
             <div class="nav-icon-box">
-              <i class="bi bi-sprout-fill"></i>
+              <i class="bi bi-tree-fill"></i>
             </div>
             <span>Registro de Cultivos</span>
           </a>
@@ -118,6 +118,19 @@
 
   <!-- Área Principal de Contenido: Mi Cuenta -->
   <main class="main-content-lulo main-content-lulo-auto">
+
+    <!-- Encabezado Móvil para Pantallas Pequeñas -->
+    <div class="mobile-nav-header">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">System</span></span>
+      </div>
+      <span class="badge bg-dark border border-success text-success">
+        <i class="bi bi-person-circle me-1"></i> {{ current_user.nameUser }}
+      </span>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}

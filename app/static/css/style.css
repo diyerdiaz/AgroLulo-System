@@ -9,6 +9,10 @@
   --text-muted: #b8d5c1; /* Color verde/gris claro de mayor contraste */
   --border-neon: rgba(57, 255, 20, 0.25);
   --gold-accent: #ffb703;
+  /* Alto fijo del footer con el mensaje en movimiento (ticker). Se usa
+     también para reservarle su espacio al sidebar y al contenido, así
+     el footer siempre queda pegado abajo del todo sin tapar nada. */
+  --footer-h: 46px;
 }
 
 body.dark-theme {
@@ -406,12 +410,32 @@ body.dark-theme {
 }
 
 /* Footer Ticker Animado Continuo (Sin Espacios Vacíos) */
+/* Páginas que no usan el layout con sidebar (el bloque "full_content" por
+   defecto de base.html): igual les reserva el espacio del footer fijo
+   abajo, para que no les tape el último pedazo de contenido. */
+body > main.flex-shrink-0 {
+  padding-bottom: var(--footer-h);
+}
+
 .footer-lulo {
   background-color: rgba(5, 7, 6, 0.95) !important;
   border-top: 1px solid var(--border-neon);
-  position: relative;
-  z-index: 10;
-  padding: 0.85rem 0;
+  /* Fijo abajo del todo, siempre lo último que se ve por encima de
+     cualquier otra cosa, en vez de quedar sujeto al alto de cada
+     página (eso era lo que antes hacía que tapara el sidebar o el
+     contenido en páginas con poco contenido). */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: var(--footer-h);
+  /* Por encima del sidebar incluso en el modo móvil (que usa 1050 al
+     abrirse), para que quede como último respaldo aunque algo cambie
+     de tamaño por un pixel de más. */
+  z-index: 2000;
+  align-items: center;
+  padding: 0;
   overflow: hidden;
   display: flex;
 }
@@ -473,12 +497,20 @@ body.dark-theme {
   box-shadow: 5px 0 30px rgba(0, 0, 0, 0.85), 0 0 20px rgba(57, 255, 20, 0.12);
   position: fixed;
   top: 0;
-  bottom: 0;
+  /* Se detiene justo donde empieza el footer fijo, para que nunca quede
+     ni un pedazo del sidebar (como el botón "Cerrar Sesión") tapado
+     por el footer. */
+  bottom: var(--footer-h);
   left: 0;
   z-index: 100;
   padding: 0.85rem 0.4rem;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s ease;
   overflow-x: hidden;
+  /* Si el menú (con todas sus opciones + usuario + Cerrar Sesión) no
+     alcanza a caber en el alto disponible, que se pueda desplazar por
+     dentro del propio sidebar en vez de quedar un botón inalcanzable
+     por fuera de la pantalla. */
+  overflow-y: auto;
   white-space: nowrap;
 }
 
@@ -644,6 +676,10 @@ body.dark-theme {
   flex-grow: 1;
   margin-left: 60px;
   padding: 2.5rem 2.2rem;
+  /* Espacio extra abajo del alto del footer fijo, para que el contenido
+     real de la página (botones, tarjetas, etc.) nunca quede escondido
+     detrás de él al llegar al final. */
+  padding-bottom: calc(2.5rem + var(--footer-h));
   min-height: 100vh;
   transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -740,10 +776,13 @@ body.dark-theme {
   .sidebar-lulo {
     position: fixed;
     width: 270px;
-    height: 100vh;
+    /* Antes tenía "height: 100vh" fijo, y eso hacía que ganara sobre
+       "bottom" y el menú terminara tapado por el footer fijo de abajo
+       (incluido el botón "Cerrar Sesión"). Con top y bottom nada más,
+       el alto se ajusta solo y se detiene justo antes del footer. */
     left: 0;
     top: 0;
-    bottom: 0;
+    bottom: var(--footer-h);
     transform: translateX(-100%);
     box-shadow: 10px 0 35px rgba(0, 0, 0, 0.95);
     z-index: 1050;
@@ -764,6 +803,7 @@ body.dark-theme {
   .main-content-lulo {
     margin-left: 0 !important;
     padding: 1.25rem 1rem;
+    padding-bottom: calc(1.25rem + var(--footer-h));
   }
 
   .dashboard-wrapper {
@@ -822,7 +862,11 @@ body.theme-orange .ambient-neon-glow-2 {
 /* Único Botón Flotante de Rayo (Abajo a la Derecha) */
 .theme-lightning-btn {
   position: fixed;
-  bottom: 25px;
+  /* Antes quedaba a 25px del fondo real de la pantalla, y como el footer
+     fijo mide --footer-h (46px), el botón le quedaba metido por detrás
+     y se veía tapado/cortado. Ahora se cuenta desde arriba del footer,
+     con espacio de sobra, para celular y computador por igual. */
+  bottom: calc(var(--footer-h) + 16px);
   right: 25px;
   z-index: 1000;
   width: 48px;

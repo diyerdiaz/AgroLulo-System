@@ -152,6 +152,10 @@ def ver(id):
                 'precio_canastilla_fmt': _formato_moneda(x.precio_canastilla) if x.precio_canastilla else None,
                 'peso_canastilla': x.peso_canastilla,
                 'kilos': round(x.kilos, 1),
+                'kilos_sobrantes': x.kilos_sobrantes or 0.0,
+                'valor_sobra': x.valor_sobra,
+                'valor_sobra_fmt': _formato_moneda(x.valor_sobra) if x.valor_sobra else None,
+                'tiene_sobra': bool(x.kilos_sobrantes and x.kilos_sobrantes > 0),
                 'valor': x.valor,
                 'valor_fmt': _formato_moneda(x.valor),
             })
@@ -186,6 +190,27 @@ def ver(id):
         total_kilos=round(total_kilos, 1),
         tipos_ingreso=TIPOS_INGRESO,
     )
+
+
+def _leer_kilos_sobrantes(tipo_clave):
+    """Lee del formulario el check y los kilos sueltos que sobraron de un
+    tipo de lulo (opcional: solo aplica si se marcó el check). Devuelve
+    (kilos_sobrantes, error): error queda en None si todo está bien, o
+    trae el mensaje a mostrar si el dato no es válido."""
+    marcado = request.form.get(f'check_sobra_{tipo_clave}') == 'on'
+    if not marcado:
+        return 0.0, None
+
+    sobra_raw = request.form.get(f'sobra_{tipo_clave}', '').strip()
+    try:
+        kilos_sobrantes = float(sobra_raw)
+        if kilos_sobrantes <= 0:
+            raise ValueError()
+    except ValueError:
+        etiqueta = TIPOS_INGRESO[tipo_clave]['label']
+        return None, f"Revisa los kilos sueltos que sobraron de {etiqueta}: debe ser un número mayor a cero."
+
+    return kilos_sobrantes, None
 
 
 @bp.route('/cultivo/<int:id>/agregar', methods=['POST'])
@@ -228,13 +253,22 @@ def agregar(id):
             flash(f"Revisa las canastillas, el precio y el peso por canastilla de {etiqueta}: deben ser números mayores a cero.", 'danger')
             return redirect(url_for('ingresos.ver', id=id))
 
-        valor = round(cantidad * precio, 2)
+        kilos_sobrantes, error_sobra = _leer_kilos_sobrantes(tipo_clave)
+        if error_sobra:
+            flash(error_sobra, 'danger')
+            return redirect(url_for('ingresos.ver', id=id))
+
+        # Los kilos sueltos que sobraron (si los hay) se pagan al mismo
+        # precio por Kg de esta canastilla: precio_canastilla / peso_canastilla.
+        valor_sobra = round((precio / peso) * kilos_sobrantes, 2) if kilos_sobrantes else 0.0
+        valor = round(cantidad * precio, 2) + valor_sobra
         nuevos.append(IngresoCultivo(
             idCultivo=cultivo.idCultivo,
             tipo=tipo_clave,
             cantidad_canastillas=cantidad,
             precio_canastilla=precio,
             peso_canastilla=peso,
+            kilos_sobrantes=kilos_sobrantes,
             valor=valor,
             fecha=fecha,
         ))
@@ -355,7 +389,12 @@ def cosecha_actualizar(id, grupo_id):
             flash(f"Revisa las canastillas, el precio y el peso por canastilla de {etiqueta}: deben ser números mayores a cero.", 'danger')
             return redirect(url_for('ingresos.cosecha_editar', id=id, grupo_id=grupo_id, origen=origen))
 
-        a_guardar[tipo_clave] = (cantidad, precio, peso)
+        kilos_sobrantes, error_sobra = _leer_kilos_sobrantes(tipo_clave)
+        if error_sobra:
+            flash(error_sobra, 'danger')
+            return redirect(url_for('ingresos.cosecha_editar', id=id, grupo_id=grupo_id, origen=origen))
+
+        a_guardar[tipo_clave] = (cantidad, precio, peso, kilos_sobrantes)
 
     if not a_guardar:
         flash('Debes dejar al menos un tipo de lulo con canastillas, precio y peso.', 'danger')
@@ -367,14 +406,16 @@ def cosecha_actualizar(id, grupo_id):
             db.session.delete(fila)
 
     total_actualizado = 0.0
-    for tipo_clave, (cantidad, precio, peso) in a_guardar.items():
-        valor = round(cantidad * precio, 2)
+    for tipo_clave, (cantidad, precio, peso, kilos_sobrantes) in a_guardar.items():
+        valor_sobra = round((precio / peso) * kilos_sobrantes, 2) if kilos_sobrantes else 0.0
+        valor = round(cantidad * precio, 2) + valor_sobra
         total_actualizado += valor
         if tipo_clave in por_tipo:
             fila = por_tipo[tipo_clave]
             fila.cantidad_canastillas = cantidad
             fila.precio_canastilla = precio
             fila.peso_canastilla = peso
+            fila.kilos_sobrantes = kilos_sobrantes
             fila.valor = valor
             fila.fecha = fecha
         else:
@@ -385,13 +426,17 @@ def cosecha_actualizar(id, grupo_id):
                 cantidad_canastillas=cantidad,
                 precio_canastilla=precio,
                 peso_canastilla=peso,
+                kilos_sobrantes=kilos_sobrantes,
                 valor=valor,
                 fecha=fecha,
             ))
 
     # La etiqueta que esta cosecha había dejado en el Calendario se
     # actualiza igual (misma fecha nueva, mismos kilos y valor).
-    total_kilos_actualizado = sum(cantidad * peso for cantidad, precio, peso in a_guardar.values())
+    total_kilos_actualizado = sum(
+        cantidad * peso + (kilos_sobrantes or 0.0)
+        for cantidad, precio, peso, kilos_sobrantes in a_guardar.values()
+    )
     actividad = ActividadCultivo.query.filter_by(idCultivo=cultivo.idCultivo, idCogida=grupo_id, tipo='cosecha').first()
     nota_actividad = f"Cosecha registrada: {round(total_kilos_actualizado, 1)} Kg por $ {_formato_moneda(total_actualizado)}."
     if actividad:

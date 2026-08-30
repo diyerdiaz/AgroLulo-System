@@ -44,7 +44,7 @@
         <li>
           <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
             <div class="nav-icon-box">
-              <i class="bi bi-sprout-fill"></i>
+              <i class="bi bi-tree-fill"></i>
             </div>
             <span>Registro de Cultivos</span>
           </a>
@@ -118,6 +118,19 @@
 
   <!-- Área Principal de Contenido: Ingresos del Cultivo -->
   <main class="main-content-lulo main-content-lulo-auto">
+
+    <!-- Encabezado Móvil para Pantallas Pequeñas -->
+    <div class="mobile-nav-header">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">System</span></span>
+      </div>
+      <span class="badge bg-dark border border-success text-success">
+        <i class="bi bi-person-circle me-1"></i> {{ current_user.nameUser }}
+      </span>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -200,6 +213,23 @@
                     <input type="number" name="peso_{{ clave }}" id="peso_{{ clave }}" class="form-control campo-cogida" data-tipo="{{ clave }}" min="0" step="0.1" placeholder="0">
                   </div>
                 </div>
+
+                <div class="form-check mt-2">
+                  <input class="form-check-input check-sobra" type="checkbox" name="check_sobra_{{ clave }}" id="check_sobra_{{ clave }}" data-tipo="{{ clave }}">
+                  <label class="form-check-label text-muted" for="check_sobra_{{ clave }}" style="font-size: 0.78rem;">
+                    ¿Sobraron kilos sueltos (que no alcanzaron para otra canastilla)?
+                  </label>
+                </div>
+                <div class="row g-2 mt-1 d-none" id="wrapper_sobra_{{ clave }}">
+                  <div class="col-6">
+                    <label class="form-neon-label mb-1" style="font-size: 0.72rem;">Kilos sueltos que sobraron</label>
+                    <input type="number" name="sobra_{{ clave }}" id="sobra_{{ clave }}" class="form-control campo-cogida campo-sobra" data-tipo="{{ clave }}" min="0" step="0.1" placeholder="0">
+                  </div>
+                  <div class="col-6 d-flex align-items-end">
+                    <small class="text-muted">Valor sobra: <span class="text-white fw-bold" id="valorSobra_{{ clave }}">$ 0</span></small>
+                  </div>
+                </div>
+
                 <div class="d-flex align-items-center justify-content-between mt-1">
                   <small class="text-muted">Kilos: <span class="text-white fw-bold" id="kilos_{{ clave }}">0 Kg</span></small>
                   <small class="text-muted">Subtotal: <span class="text-white fw-bold" id="subtotal_{{ clave }}">$ 0</span></small>
@@ -289,6 +319,9 @@
                       <span class="text-white">{{ t.label }}</span>
                       <span class="text-muted">
                         &middot; {{ t.cantidad_canastillas|int }} canastillas &times; $ {{ t.precio_canastilla_fmt }} c/u &times; {{ t.peso_canastilla|round(1) }} Kg c/u
+                        {% if t.tiene_sobra %}
+                        &middot; +{{ t.kilos_sobrantes|round(1) }} Kg sueltos (+$ {{ t.valor_sobra_fmt }})
+                        {% endif %}
                       </span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
@@ -373,6 +406,19 @@
     return valor.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
+  // Muestra/oculta el campo de "kilos sueltos que sobraron" de un tipo,
+  // según si su checkbox está marcado o no.
+  function alternarCampoSobra(tipo) {
+    const check = document.getElementById('check_sobra_' + tipo);
+    const wrapper = document.getElementById('wrapper_sobra_' + tipo);
+    if (!check || !wrapper) return;
+    wrapper.classList.toggle('d-none', !check.checked);
+    if (!check.checked) {
+      const inputSobra = document.getElementById('sobra_' + tipo);
+      if (inputSobra) inputSobra.value = '';
+    }
+  }
+
   function actualizarSubtotalesCogida() {
     let total = 0;
     let kilosTotal = 0;
@@ -381,15 +427,27 @@
       const cantidad = parseFloat(document.getElementById('cantidad_' + tipo).value) || 0;
       const precio = parseFloat(document.getElementById('precio_' + tipo).value) || 0;
       const peso = parseFloat(document.getElementById('peso_' + tipo).value) || 0;
+      const checkSobra = document.getElementById('check_sobra_' + tipo);
+      const sobraKilos = (checkSobra && checkSobra.checked)
+        ? (parseFloat(document.getElementById('sobra_' + tipo).value) || 0)
+        : 0;
 
-      const subtotal = cantidad * precio;
-      const kilos = cantidad * peso;
+      // Los kilos sueltos que sobraron se pagan al mismo precio por Kg de
+      // esta canastilla (precio entre peso), tal como se paga en el campo.
+      const precioPorKilo = peso > 0 ? (precio / peso) : 0;
+      const valorSobra = sobraKilos * precioPorKilo;
+
+      const subtotal = (cantidad * precio) + valorSobra;
+      const kilos = (cantidad * peso) + sobraKilos;
 
       const elSubtotal = document.getElementById('subtotal_' + tipo);
       if (elSubtotal) elSubtotal.textContent = '$ ' + formatoMoneda(subtotal);
 
       const elKilos = document.getElementById('kilos_' + tipo);
       if (elKilos) elKilos.textContent = kilos.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' Kg';
+
+      const elValorSobra = document.getElementById('valorSobra_' + tipo);
+      if (elValorSobra) elValorSobra.textContent = '$ ' + formatoMoneda(valorSobra);
 
       total += subtotal;
       kilosTotal += kilos;
@@ -412,6 +470,13 @@
 
     document.querySelectorAll('.campo-cogida').forEach((el) => {
       el.addEventListener('input', actualizarSubtotalesCogida);
+    });
+
+    document.querySelectorAll('.check-sobra').forEach((el) => {
+      el.addEventListener('change', () => {
+        alternarCampoSobra(el.dataset.tipo);
+        actualizarSubtotalesCogida();
+      });
     });
   });
 </script>

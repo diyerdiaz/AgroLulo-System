@@ -35,6 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
     height = canvas.height = window.innerHeight;
   });
 
+  // Seguimiento del mouse: el canvas tiene pointer-events:none, así que
+  // esto no interfiere con ningún botón ni enlace de la página; solo se
+  // usa para que el fondo "reaccione" (brillo + partículas) al pasar el
+  // cursor por encima, en cualquier parte de la pantalla.
+  let mouseX = null;
+  let mouseY = null;
+
+  window.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  // Si el mouse sale de la ventana, se apaga el efecto en vez de quedarse
+  // pegado en el último punto.
+  document.addEventListener('mouseout', (e) => {
+    if (!e.relatedTarget && !e.toElement) {
+      mouseX = null;
+      mouseY = null;
+    }
+  });
+
   const particleCount = 45;
   const particles = [];
 
@@ -100,6 +121,20 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.fillStyle = scanGrad;
     ctx.fillRect(0, scanLineY - 20, width, 40);
 
+    // 2.5. Brillo suave que sigue al cursor del mouse (solo en el fondo,
+    // el canvas no bloquea clics porque tiene pointer-events: none).
+    if (mouseX !== null && mouseY !== null) {
+      const glowRadius = 220;
+      const mouseGrad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, glowRadius);
+      mouseGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.16)`);
+      mouseGrad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.06)`);
+      mouseGrad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+      ctx.fillStyle = mouseGrad;
+      ctx.beginPath();
+      ctx.arc(mouseX, mouseY, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     // 3. Dibujar y Actualizar Puntos Parpadeantes (Twinkle Lights)
     stars.forEach((star) => {
       if (star.increasing) {
@@ -119,6 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 4. Dibujar y Actualizar Partículas Flotantes
+    const influenceRadius = 150;
     particles.forEach((p) => {
       p.x += p.vx;
       p.y += p.vy;
@@ -128,15 +164,34 @@ document.addEventListener('DOMContentLoaded', () => {
       if (p.y < 0) p.y = height;
       if (p.y > height) p.y = 0;
 
-      p.pulseFactor += p.pulseSpeed;
-      const currentAlpha = 0.2 + (Math.sin(p.pulseFactor) + 1) * 0.25;
+      // Las partículas cercanas al cursor se alejan suavemente y brillan
+      // más, como si el fondo "reaccionara" al pasar el mouse por encima.
+      let cercaniaMouse = 0;
+      if (mouseX !== null && mouseY !== null) {
+        const dx = p.x - mouseX;
+        const dy = p.y - mouseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < influenceRadius && dist > 0.01) {
+          cercaniaMouse = 1 - dist / influenceRadius;
+          const empuje = cercaniaMouse * 0.7;
+          p.x += (dx / dist) * empuje;
+          p.y += (dy / dist) * empuje;
+        }
+      }
 
-      ctx.shadowBlur = 12;
+      p.pulseFactor += p.pulseSpeed;
+      const currentAlpha = Math.min(
+        1,
+        0.2 + (Math.sin(p.pulseFactor) + 1) * 0.25 + cercaniaMouse * 0.5
+      );
+      const currentRadius = p.radius + cercaniaMouse * 1.5;
+
+      ctx.shadowBlur = 12 + cercaniaMouse * 10;
       ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.9)`;
       ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${currentAlpha})`;
 
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
       ctx.fill();
     });
 

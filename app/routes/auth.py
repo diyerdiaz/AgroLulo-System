@@ -80,10 +80,14 @@ def dashboard():
         gastos_reales = db.session.query(
             db.func.coalesce(db.func.sum(GastoCultivo.valor), 0.0)
         ).filter(GastoCultivo.idCultivo == c.idCultivo).scalar()
-        # Producción real en Kg: canastillas x peso de cada canastilla,
-        # sumado de todas las cosechas registradas de verdad (Ingresos).
+        # Producción real en Kg: canastillas x peso de cada canastilla, más
+        # los kilos sueltos que hayan sobrado en cada tipo, sumado de todas
+        # las cosechas registradas de verdad (Ingresos).
         produccion_reales = db.session.query(
-            db.func.coalesce(db.func.sum(IngresoCultivo.cantidad_canastillas * IngresoCultivo.peso_canastilla), 0.0)
+            db.func.coalesce(db.func.sum(
+                db.func.coalesce(IngresoCultivo.cantidad_canastillas * IngresoCultivo.peso_canastilla, 0.0)
+                + db.func.coalesce(IngresoCultivo.kilos_sobrantes, 0.0)
+            ), 0.0)
         ).filter(IngresoCultivo.idCultivo == c.idCultivo).scalar()
 
         ingresos_c = ingresos_reales if ingresos_reales and ingresos_reales > 0 else datos['ingresos']
@@ -340,7 +344,10 @@ def estadisticas_usuarios():
                 db.func.coalesce(db.func.sum(GastoCultivo.valor), 0.0)
             ).filter(GastoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
             produccion_c = db.session.query(
-                db.func.coalesce(db.func.sum(IngresoCultivo.cantidad_canastillas * IngresoCultivo.peso_canastilla), 0.0)
+                db.func.coalesce(db.func.sum(
+                    db.func.coalesce(IngresoCultivo.cantidad_canastillas * IngresoCultivo.peso_canastilla, 0.0)
+                    + db.func.coalesce(IngresoCultivo.kilos_sobrantes, 0.0)
+                ), 0.0)
             ).filter(IngresoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
 
             total_hectareas += c.hectareas or 0.0

@@ -46,13 +46,16 @@ def create_app():
         return user
 
     # Register blueprints
+    # NOTA: el blueprint "users_route_async" (rutas /UserAsync/...) se quitó
+    # de aquí porque era una API JSON que ninguna página de AgroLulo llegó a
+    # usar nunca (no había ningún botón, formulario ni script que la
+    # llamara); era código muerto que no cumplía ninguna función real.
     from app.routes import (
-        users_route, auth, users_route_async, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route
+        users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route
     )
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(users_route.bp)
-    app.register_blueprint(users_route_async.bp)
     app.register_blueprint(cultivos_route.bp)
     app.register_blueprint(calendario_route.bp)
     app.register_blueprint(gastos_route.bp)
@@ -78,6 +81,7 @@ def create_app():
                 ('monto_pagado', 'FLOAT DEFAULT 0'),
                 ('fecha_pago', 'DATE'),
                 ('idCogida', 'INTEGER'),
+                ('kilos_sobrantes', 'FLOAT DEFAULT 0'),
             ])
             _asegurar_columnas('actividades_cultivo', [
                 ('idCogida', 'INTEGER'),

@@ -1,102 +1,41 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.users import User
 from app import db
-from io import BytesIO
-import base64
-import json
 
+# NOTA: este blueprint alguna vez tuvo un sistema completo de gestión de
+# usuarios con listado, edición, borrado y códigos QR (rutas /User/,
+# /User/edit, /User/detail, /User/delete, /User/qr, /User/read_qr). Ese
+# sistema quedó de una versión anterior del proyecto y nunca estuvo
+# enlazado desde ninguna página real de AgroLulo (el panel de usuarios de
+# verdad, al que sí se llega desde el menú, es "Usuarios" en el sidebar,
+# manejado por las rutas auth.usuarios / auth.usuario_crear / etc.). Se
+# eliminó por no cumplir ninguna función visible, dejando únicamente la
+# ruta 'add', que sí es la que usa de verdad el formulario "Crear Cuenta
+# Nueva" del login.
 bp = Blueprint('user', __name__, url_prefix='/User')
-
-@bp.route('/')
-def index():
-    data = User.query.all()
-    return render_template('users/index.html', data=data)
-
-@bp.route('/js')
-def indexjs():
-    data = User.query.all()
-        # Serializar los datos usando una comprensión de lista
-    result = [user.to_dict() for user in data]  # Asegúrate de que el modelo User tenga un método to_dict()
-    
-    # Devolver la respuesta JSON
-    return jsonify(result)
 
 @bp.route('/add', methods=['GET', 'POST'])
 def add():
     from flask import flash
     if request.method == 'POST':
-        nameUser = request.form['nameUser']
+        nameUser = request.form['nameUser'].strip()
         passwordUser = request.form['passwordUser']
+
+        # El nombre de usuario debe ser único: si ya existe una cuenta con
+        # ese nombre, se avisa con un mensaje claro en vez de dejar que
+        # falle la base de datos (que antes tiraba un error técnico feo).
+        ya_existe = User.query.filter_by(nameUser=nameUser).first()
+        if ya_existe:
+            flash(f"Ya existe una cuenta con el nombre de usuario '{nameUser}'. Elige otro nombre.", "danger")
+            return render_template('login.html', show_register=True)
+
         # Las cuentas que se crean desde "Crear Cuenta Nueva" quedan
-        # bloqueadas hasta que el administrador las active manualmente
-        # desde la sección de Usuarios: por eso activo=False acá.
-        new_user = User(nameUser=nameUser, activo=False)
+        # activas de una vez, sin necesidad de que el administrador las
+        # active manualmente: por eso activo=True acá.
+        new_user = User(nameUser=nameUser, activo=True)
         new_user.set_password(passwordUser)
         db.session.add(new_user)
         db.session.commit()
-        flash("¡Cuenta creada exitosamente! Espera a que el administrador la active para poder iniciar sesión.", "warning")
+        flash("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.", "success")
         return redirect(url_for('auth.login'))
     return render_template('login.html', show_register=True)
-
-@bp.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit(id):
-    user = User.query.get_or_404(id)
-    if request.method == 'POST':
-        user.nameUser = request.form['nameUser']
-        nueva_password = request.form['passwordUser']
-        if nueva_password:
-            user.set_password(nueva_password)
-        db.session.commit()
-        return redirect(url_for('user.index'))
-
-    return render_template('users/edit.html', user=user)
-@bp.route('/detail/<int:id>')
-def detail(id):
-    user = User.query.get_or_404(id)
-    return render_template('users/detail.html', user=user)
-
-@bp.route('/delete/<int:id>')
-def delete(id):
-    user = User.query.get_or_404(id)    
-    db.session.delete(user)
-    db.session.commit()
-    return redirect(url_for('user.index'))
-
-@bp.route('/qr/<int:id>')
-def generate_qr(id):
-    print("Entrando a la ruta de generación de QR para el usuario con ID:", id)
-    user = User.query.get_or_404(id)
-    qr_code_base64 = user.generate_qr()
-    # Decodificar la imagen del QR desde base64
-    qr_code_img = base64.b64decode(qr_code_base64)
-    return send_file(BytesIO(qr_code_img), mimetype='image/png')
-
-
-@bp.route('/read_qr', methods=['POST'])
-def read_qr():
-    from pyzbar.pyzbar import decode
-    from PIL import Image
-    import json
-
-    if 'qr_image' not in request.files:
-        return "No se ha proporcionado una imagen de QR", 400
-
-    qr_image = request.files['qr_image']
-    img = Image.open(qr_image)
-    decoded_objects = decode(img)
-
-    if not decoded_objects:
-        return "No se pudo leer el código QR", 400
-
-    qr_data = decoded_objects[0].data.decode('utf-8')
-    user_data = json.loads(qr_data)
-    user_id = user_data.get('ID')
-
-    if not user_id:
-        return "El código QR no contiene un ID de usuario válido", 400
-
-    user = User.query.get(user_id)
-    if not user:
-        return "Usuario no encontrado", 404
-
-    return render_template('users/detail.html', user=user)
