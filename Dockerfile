@@ -34,5 +34,14 @@ EXPOSE 5000
 # distinta cada vez que arranca la app. Con más de un worker, cada
 # proceso tendría su propia clave y las sesiones (inicio de sesión)
 # fallarían de forma intermitente según qué worker atendiera cada
-# petición. Con un solo worker se evita ese problema.
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "run:app"]
+# petición. Con un solo worker se evita ese problema (si defines
+# SECRET_KEY fija en tu .env, sí podrías subir --workers de forma segura).
+#
+# --max-requests: reinicia el worker automáticamente cada ~300 peticiones
+# (con --max-requests-jitter para que no coincida siempre en el mismo
+# número). Es una red de seguridad: si algo va dejando memoria sin
+# liberar poco a poco (por ejemplo, en el análisis de fotos con YOLO),
+# esto evita que se acumule indefinidamente hasta tumbar el servidor por
+# falta de memoria, como se vio en los logs ("WORKER TIMEOUT" / "Perhaps
+# out of memory?").
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "--max-requests", "300", "--max-requests-jitter", "50", "run:app"]

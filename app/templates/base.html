@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block titulo_pagina %}AgroLulo System{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/agrolulo-logo.svg') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.css')}}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css')}}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
 </head>
@@ -71,7 +71,7 @@
     </div>
   </footer>
 
-  <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.js') }}"></script>
+  <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/page-loading.js') }}"></script>
 
   <script>

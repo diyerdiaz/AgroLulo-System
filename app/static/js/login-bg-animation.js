@@ -197,8 +197,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ctx.shadowBlur = 0;
 
-    requestAnimationFrame(animate);
+    animationFrameId = requestAnimationFrame(animate);
   }
+
+  // Si la persona cambia de pestaña o minimiza la ventana, se detiene la
+  // animación (deja de gastar procesador de fondo sin que se note nada,
+  // porque nadie la está viendo) y se reanuda solita al volver.
+  let animationFrameId = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    } else if (animationFrameId === null) {
+      animate();
+    }
+  });
 
   animate();
 });

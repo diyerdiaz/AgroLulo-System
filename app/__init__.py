@@ -1,11 +1,16 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_compress import Compress
 from sqlalchemy import text
 import os
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+# Comprime automáticamente (gzip/brotli) las respuestas HTML, CSS y JS antes
+# de enviarlas al navegador. Esto reduce bastante el peso de cada página sin
+# tener que tocar los archivos: mismo contenido, menos bytes viajando.
+compress = Compress()
 
 
 def _asegurar_columnas(tabla, columnas):
@@ -28,11 +33,12 @@ def _asegurar_columnas(tabla, columnas):
 
 def create_app():
 
-    app = Flask(__name__)    
+    app = Flask(__name__)
     app.config.from_object('config.Config')
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
+    compress.init_app(app)
 
     @login_manager.user_loader
     def load_user(idUser):

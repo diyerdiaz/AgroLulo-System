@@ -57,7 +57,17 @@ def _cargar_sesion_yolo():
     siguientes fotos (cargarlo desde disco toma un par de segundos)."""
     global _sesion_yolo
     if _sesion_yolo is None:
-        _sesion_yolo = ort.InferenceSession(MODEL_PATH, providers=['CPUExecutionProvider'])
+        # Por defecto onnxruntime intenta usar todos los núcleos de CPU
+        # disponibles para paralelizar la inferencia. En un servidor
+        # pequeño (poca RAM/CPU, como suelen ser los planes económicos)
+        # eso dispara el uso de memoria y CPU justo cuando alguien sube
+        # una foto a "Análisis", pudiendo tumbar el único worker de
+        # Gunicorn. Se limita a 1 hilo: la foto sigue analizándose bien,
+        # solo un poco más lento, pero sin ese pico de consumo.
+        opciones = ort.SessionOptions()
+        opciones.intra_op_num_threads = 1
+        opciones.inter_op_num_threads = 1
+        _sesion_yolo = ort.InferenceSession(MODEL_PATH, sess_options=opciones, providers=['CPUExecutionProvider'])
     return _sesion_yolo
 
 

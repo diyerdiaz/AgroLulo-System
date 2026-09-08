@@ -327,7 +327,7 @@ body.dark-theme {
 .login-visual-side {
   position: relative;
   background: linear-gradient(135deg, rgba(7, 9, 8, 0.7), rgba(15, 23, 18, 0.9)),
-              url('../img/lulo_hero.png') center/cover no-repeat;
+              url('../img/lulo_hero.jpg') center/cover no-repeat;
   min-height: 520px;
   display: flex;
   flex-direction: column;
