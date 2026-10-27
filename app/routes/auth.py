@@ -70,10 +70,6 @@ MESES_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'
 PALETA_CULTIVOS = ['#39ff14', '#4cc9f0', '#ffb703', '#b5179e', '#ff4d4d', '#06d6a0', '#8338ec', '#f72585']
 
 
-def formato_moneda(valor):
-    """Da formato de moneda colombiana: separador de miles con punto, sin decimales."""
-    return f"{valor:,.0f}".replace(',', '.')
-
 @bp.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':

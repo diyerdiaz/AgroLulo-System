@@ -31,10 +31,14 @@ def _asegurar_columnas(tabla, columnas):
 
     db.session.commit()
 
-def create_app():
+def create_app(config_extra=None):
 
     app = Flask(__name__)
     app.config.from_object('config.Config')
+    # Permite sobrescribir la configuración (por ejemplo, los tests usan una
+    # base de datos en memoria para no tocar nunca la base de datos real).
+    if config_extra:
+        app.config.update(config_extra)
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'

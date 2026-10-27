@@ -3,6 +3,8 @@
 
 # Entorno virtual de Python y archivos compilados.
 venv/
+.venv/
+.pytest_cache/
 __pycache__/
 **/__pycache__/
 *.pyc
@@ -11,3 +13,6 @@ __pycache__/
 instance/
 *.sqlite
 *.sqlite3
+
+# Instrucciones locales para Claude Code (no se suben a GitHub).
+CLAUDE.md
