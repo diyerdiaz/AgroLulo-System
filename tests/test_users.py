@@ -1,26 +1,23 @@
-def test_index(client):
-    response = client.get('/User/')
-    assert response.status_code == 200
-    assert b"Usuarios" in response.data  # Asumiendo que hay un texto "Users" en la página
+from app.models.users import User
+from tests.conftest import iniciar_sesion
 
-def test_add_user(client):
-    response = client.post('/User/add', data={
-        'nameUser': 'new_user',
-        'passwordUser': 'new_password'
-    }, follow_redirects=True)
-    assert response.status_code == 200
-    assert b"Usuarios" in response.data  # Asumiendo que el nombre del usuario se muestra en la página
 
-def test_edit_user(client, user):
-    response = client.post(f'/User/edit/{user.idUser}', data={
-        'nameUser': 'updated_user',
-        'passwordUser': 'updated_password'
-    }, follow_redirects=True)
+def test_registro_crea_cuenta_activa(client):
+    response = client.post('/User/add', data={'nameUser': 'nuevo', 'passwordUser': 'clave123'},
+                           follow_redirects=True)
     assert response.status_code == 200
-    assert b"updated_user" in response.data  # Asumiendo que el nombre del usuario actualizado se muestra en la página
+    assert 'Cuenta creada exitosamente'.encode() in response.data
+    nuevo = User.query.filter_by(nameUser='nuevo').first()
+    assert nuevo is not None and nuevo.activo
 
-def test_delete_user(client, user):
-    response = client.get(f'/User/delete/{user.idUser}', follow_redirects=True)
-    assert response.status_code == 200
-    assert b"Usuarios" in response.data  # Asumiendo que hay un mensaje de confirmación de eliminación
 
+def test_registro_rechaza_nombre_repetido(client, user):
+    response = client.post('/User/add', data={'nameUser': 'test_user', 'passwordUser': 'x'})
+    assert 'Ya existe una cuenta'.encode() in response.data
+    assert User.query.filter_by(nameUser='test_user').count() == 1
+
+
+def test_admin_ve_panel_de_usuarios(client, admin):
+    iniciar_sesion(client, admin)
+    assert client.get('/usuarios').status_code == 200
+    assert client.get('/usuarios/estadisticas').status_code == 200

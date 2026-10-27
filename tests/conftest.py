@@ -1,25 +1,69 @@
-from app import create_app, db
 import pytest
+from datetime import date
+
+from app import create_app, db
+from app.routes import auth
+
 
 @pytest.fixture
 def app():
-    app = create_app()
+    # Base de datos en memoria: los tests NUNCA tocan instance/flaskdb.sqlite.
+    app = create_app({
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'SECRET_KEY': 'clave-de-pruebas',
+    })
+    # El bloqueo por intentos fallidos se guarda en memoria del módulo:
+    # se limpia para que un test no afecte al siguiente.
+    auth._intentos_fallidos.clear()
+    auth._bloqueado_hasta.clear()
     with app.app_context():
-        db.create_all()  # Create tables within the context
         yield app
-        db.session.remove()  # Cleanup session objects
+        db.session.remove()
         db.drop_all()
-  
+
 
 @pytest.fixture
 def client(app):
     return app.test_client()
 
+
+def crear_usuario(nombre, clave='clave123', activo=True, admin=False):
+    from app.models.users import User
+    user = User(nameUser=nombre, activo=activo, isAdmin=admin)
+    user.set_password(clave)
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def crear_cultivo(user, nombre='Lote de prueba'):
+    from app.models.cultivo import Cultivo
+    cultivo = Cultivo(idUser=user.idUser, nombre=nombre, hectareas=1.0,
+                      plantas=680, fecha_sembrado=date(2026, 1, 15))
+    db.session.add(cultivo)
+    db.session.commit()
+    return cultivo
+
+
+def iniciar_sesion(client, user):
+    with client.session_transaction() as s:
+        s['_user_id'] = str(user.idUser)
+        s['_fresh'] = True
+
+
 @pytest.fixture
 def user(app):
+    return crear_usuario('test_user')
+
+
+@pytest.fixture
+def admin(app):
     from app.models.users import User
-    user = User(nameUser="test_user", passwordUser="test_password")
-    db.session.add(user)
-    db.session.commit()  # Commit changes within the context
-    yield user    
-  # Cleanup changes within the context
+    return User.query.filter_by(nameUser='admin').first()
+
+
+@pytest.fixture
+def logged_client(client, user):
+    iniciar_sesion(client, user)
+    return client
