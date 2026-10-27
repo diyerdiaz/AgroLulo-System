@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>Recupera tu contraseña · AgroLulo System</title>
+  <style>
+    @media only screen and (max-width: 600px) {
+      .tarjeta { width: 100% !important; border-radius: 0 !important; }
+      .relleno { padding-left: 22px !important; padding-right: 22px !important; }
+      .codigo { font-size: 34px !important; letter-spacing: 8px !important; padding: 16px 18px !important; }
+      .titulo { font-size: 24px !important; }
+      .columna { display: block !important; width: 100% !important; padding: 6px 0 !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#07100a; -webkit-text-size-adjust:100%;">
+
+  <!-- Texto de vista previa (lo que se ve en la bandeja antes de abrir el correo) -->
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:#07100a;">
+    Tu código para recuperar la contraseña es {{ codigo }}. Vence en {{ minutos }} minutos.
+    &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#07100a;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+
+        <!-- Marca superior -->
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" class="tarjeta" style="width:560px; max-width:560px;">
+          <tr>
+            <td align="center" style="padding:0 0 18px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="34" height="34" align="center" valign="middle" style="width:34px; height:34px; background-color:#39ff14; border-radius:50%; font-size:17px; line-height:34px;">&#127807;</td>
+                  <td style="padding-left:10px; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:19px; font-weight:800; color:#ffffff;">
+                    Agro<span style="color:#39ff14;">Lulo</span> System
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Tarjeta principal -->
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" class="tarjeta" style="width:560px; max-width:560px; background-color:#0f1f14; border:1px solid #1f3a26; border-radius:18px; overflow:hidden;">
+
+          <!-- Foto de lulos -->
+          <tr>
+            <td style="padding:0; line-height:0; font-size:0;">
+              <img src="cid:{{ cid_encabezado }}" width="560" alt="Cultivo de lulo" style="display:block; width:100%; max-width:560px; height:auto; border:0; border-radius:18px 18px 0 0;">
+            </td>
+          </tr>
+
+          <!-- Título -->
+          <tr>
+            <td align="center" class="relleno" style="padding:8px 40px 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+              <span style="display:inline-block; padding:6px 14px; border:1px solid #39ff14; border-radius:999px; color:#39ff14; font-size:11px; font-weight:700; letter-spacing:2px;">&#128274; RECUPERACIÓN DE CUENTA</span>
+              <h1 class="titulo" style="margin:18px 0 10px; color:#ffffff; font-size:28px; line-height:1.25; font-weight:800;">
+                Recupera tu <span style="color:#39ff14;">contraseña</span>
+              </h1>
+              <p style="margin:0; color:#b8d5c1; font-size:15px; line-height:1.6;">
+                Hola, <strong style="color:#ffffff;">{{ nombre }}</strong>. Recibimos una solicitud para cambiar la contraseña de tu cuenta.
+                Usa este código para continuar:
+              </p>
+            </td>
+          </tr>
+
+          <!-- Código -->
+          <tr>
+            <td align="center" class="relleno" style="padding:28px 40px 8px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="codigo" align="center" style="background-color:#07100a; border:2px solid #39ff14; border-radius:14px; padding:18px 30px; font-family:'Courier New',Consolas,monospace; font-size:42px; font-weight:800; letter-spacing:12px; color:#39ff14; box-shadow:0 0 24px rgba(57,255,20,0.35);">{{ codigo }}</td>
+                </tr>
+              </table>
+              <p style="margin:12px 0 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif; color:#6f8f78; font-size:12px;">
+                Escríbelo en la pantalla <strong style="color:#b8d5c1;">Nueva Contraseña</strong> de AgroLulo.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Datos rápidos -->
+          <tr>
+            <td class="relleno" style="padding:22px 40px 6px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                <tr>
+                  <td class="columna" width="33%" align="center" style="padding:0 4px;">
+                    <div style="background-color:#132a1a; border:1px solid #1f3a26; border-radius:12px; padding:12px 6px;">
+                      <div style="font-size:20px;">&#9201;&#65039;</div>
+                      <div style="color:#ffffff; font-size:13px; font-weight:700; margin-top:4px;">{{ minutos }} minutos</div>
+                      <div style="color:#6f8f78; font-size:11px;">de validez</div>
+                    </div>
+                  </td>
+                  <td class="columna" width="33%" align="center" style="padding:0 4px;">
+                    <div style="background-color:#132a1a; border:1px solid #1f3a26; border-radius:12px; padding:12px 6px;">
+                      <div style="font-size:20px;">&#128273;</div>
+                      <div style="color:#ffffff; font-size:13px; font-weight:700; margin-top:4px;">Un solo uso</div>
+                      <div style="color:#6f8f78; font-size:11px;">se borra al usarlo</div>
+                    </div>
+                  </td>
+                  <td class="columna" width="33%" align="center" style="padding:0 4px;">
+                    <div style="background-color:#132a1a; border:1px solid #1f3a26; border-radius:12px; padding:12px 6px;">
+                      <div style="font-size:20px;">&#128737;&#65039;</div>
+                      <div style="color:#ffffff; font-size:13px; font-weight:700; margin-top:4px;">Es privado</div>
+                      <div style="color:#6f8f78; font-size:11px;">no lo compartas</div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Aviso -->
+          <tr>
+            <td class="relleno" style="padding:20px 40px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#1f1a0b; border-left:4px solid #ffb703; border-radius:10px; padding:14px 16px; font-family:'Segoe UI',Helvetica,Arial,sans-serif; color:#e9d8a6; font-size:13px; line-height:1.55;">
+                    <strong style="color:#ffb703;">¿No fuiste tú?</strong> Ignora este correo: tu contraseña no ha cambiado
+                    y nadie puede entrar a tu cuenta sin este código. AgroLulo nunca te pedirá el código por teléfono ni por chat.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Pie -->
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" class="tarjeta" style="width:560px; max-width:560px;">
+          <tr>
+            <td align="center" style="padding:22px 20px 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif; color:#6f8f78; font-size:12px; line-height:1.6;">
+              Contabilidad y control financiero para el cultivo de lulo &#127807;<br>
+              Este es un correo automático, por favor no lo respondas.<br>
+              <span style="color:#3f5c47;">© {{ anio }} AgroLulo System · Todos los derechos reservados</span>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

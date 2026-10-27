@@ -12,6 +12,12 @@ class User(db.Model, UserMixin):
     __tablename__ = 'users'
     idUser = db.Column(db.Integer, primary_key=True)
     nameUser = db.Column(db.String(80), unique=True, nullable=False)
+    # Correo de la cuenta: se usa para enviar el código de 6 dígitos cuando
+    # alguien olvida su contraseña. Es opcional porque las cuentas que ya
+    # existían antes de este campo no tienen correo (lo pueden agregar desde
+    # "Mi Cuenta"). Se guarda siempre en minúsculas y no se puede repetir
+    # entre cuentas (eso se valida en las rutas).
+    emailUser = db.Column(db.String(120), nullable=True)
     # Guarda el hash de la contraseña (nunca la contraseña en texto plano).
     # Se ensanchó de 120 a 255 caracteres porque los hashes modernos
     # (scrypt/pbkdf2) pueden ser más largos que una contraseña normal.
@@ -51,6 +57,7 @@ class User(db.Model, UserMixin):
         return {
             "idUser": self.idUser,
             "nameUser": self.nameUser,
+            "emailUser": self.emailUser,
             # Ya no se incluye la contraseña (ni su hash) en el diccionario:
             # antes esto se mandaba tal cual en las rutas que devuelven JSON.
             "isAdmin": self.isAdmin,

@@ -28,9 +28,9 @@ def client(app):
     return app.test_client()
 
 
-def crear_usuario(nombre, clave='clave123', activo=True, admin=False):
+def crear_usuario(nombre, clave='clave123', activo=True, admin=False, correo=None):
     from app.models.users import User
-    user = User(nameUser=nombre, activo=activo, isAdmin=admin)
+    user = User(nameUser=nombre, emailUser=correo, activo=activo, isAdmin=admin)
     user.set_password(clave)
     db.session.add(user)
     db.session.commit()

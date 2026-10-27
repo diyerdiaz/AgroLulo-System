@@ -188,6 +188,16 @@
             </div>
 
             <div class="mb-3">
+              <label for="emailUser" class="form-neon-label">
+                <i class="bi bi-envelope me-1"></i> Correo Electrónico <span class="text-muted" style="font-size: 0.78rem;">(para recuperar tu contraseña)</span>
+              </label>
+              <div class="input-group input-group-neon">
+                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                <input type="email" name="emailUser" id="emailUser" class="form-control" value="{{ current_user.emailUser or '' }}" placeholder="tucorreo@ejemplo.com" autocomplete="email">
+              </div>
+            </div>
+
+            <div class="mb-3">
               <label for="nueva_password" class="form-neon-label">
                 <i class="bi bi-key me-1"></i> Nueva Contraseña <span class="text-muted" style="font-size: 0.78rem;">(déjalo vacío si no la quieres cambiar)</span>
               </label>
