@@ -33,7 +33,7 @@
         <div class="col-lg-6 login-form-side text-center">
 
           <!-- 1. Panel Formulario de Inicio de Sesión -->
-          <div id="loginPanel" class="form-panel form-panel-centered {% if not show_register %}panel-visible{% else %}panel-hidden{% endif %}">
+          <div id="loginPanel" class="form-panel form-panel-centered {% if not show_register and not show_recover and not show_codigo %}panel-visible{% else %}panel-hidden{% endif %}">
             
             <!-- Logo Insignia Centrado y Encabezado -->
             <div class="mb-4 text-center">
@@ -76,6 +76,12 @@
                   <i class="bi bi-person-plus me-2"></i> Crear Cuenta Nueva
                 </button>
               </div>
+
+              <div class="text-center mt-3">
+                <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('recover')">
+                  ¿Olvidaste tu contraseña?
+                </a>
+              </div>
             </form>
 
             <div class="mt-4 pt-3 text-center border-top border-secondary border-opacity-25">
@@ -114,6 +120,16 @@
               </div>
 
               <div class="mb-2">
+                <label for="regEmailUser" class="form-neon-label">
+                  <i class="bi bi-envelope me-1"></i> Correo Electrónico
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                  <input type="email" name="emailUser" id="regEmailUser" class="form-control" placeholder="tucorreo@ejemplo.com" required autocomplete="email">
+                </div>
+              </div>
+
+              <div class="mb-2">
                 <label for="regPasswordUser" class="form-neon-label">
                   <i class="bi bi-lock me-1"></i> Contraseña
                 </label>
@@ -145,6 +161,113 @@
               <a href="javascript:void(0)" class="link-neon ms-2" onclick="switchForm('login')">
                 Iniciar sesión
               </a>
+            </div>
+          </div>
+
+          <!-- 3. Panel Recuperar Contraseña -->
+          <div id="recoverPanel" class="form-panel form-panel-centered {% if show_recover %}panel-visible{% else %}panel-hidden{% endif %}">
+
+            <!-- Logo Insignia Centrado y Encabezado -->
+            <div class="mb-4 text-center">
+              <div class="brand-logo-badge mx-auto">
+                <img src="{{ url_for('static', filename='img/agrolulo-logo.svg') }}" alt="AgroLulo" class="brand-logo-icon">
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span class="fw-bold text-uppercase tracking-wider" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
+              </div>
+              <h1 class="login-title mb-2">Recuperar <span>Contraseña</span></h1>
+              <p class="login-subtitle mb-0">Escribe tu usuario o tu correo electrónico para recuperar el acceso a tu cuenta.</p>
+            </div>
+
+            <form method="post" action="{{ url_for('auth.recuperar_contrasena') }}" class="text-start">
+              <div class="mb-4">
+                <label for="usuarioCorreo" class="form-neon-label">
+                  <i class="bi bi-person-badge me-1"></i> Usuario o correo electrónico
+                </label>
+                <div class="input-group input-group-neon">
+                  <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                  <input type="text" name="usuarioCorreo" id="usuarioCorreo" class="form-control" placeholder="Ingresa tu usuario o correo" required autocomplete="username">
+                </div>
+              </div>
+
+              <div class="d-grid gap-2 mb-3">
+                <button type="submit" class="btn btn-neon-primary py-3">
+                  <i class="bi bi-send me-2"></i> Recuperar Contraseña
+                </button>
+              </div>
+            </form>
+
+            <div class="text-center pt-2">
+              <span class="text-muted" style="font-size: 0.9rem;">¿Ya la recordaste?</span>
+              <a href="javascript:void(0)" class="link-neon ms-2" onclick="switchForm('login')">
+                Iniciar sesión
+              </a>
+            </div>
+          </div>
+
+          <!-- 4. Panel Código de Verificación y Nueva Contraseña -->
+          <div id="codigoPanel" class="form-panel form-panel-centered {% if show_codigo %}panel-visible{% else %}panel-hidden{% endif %}">
+
+            <div class="mb-3 text-center">
+              <div class="brand-logo-badge mx-auto">
+                <img src="{{ url_for('static', filename='img/agrolulo-logo.svg') }}" alt="AgroLulo" class="brand-logo-icon">
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span class="fw-bold text-uppercase tracking-wider" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
+              </div>
+              <h1 class="login-title mb-2">Nueva <span>Contraseña</span></h1>
+              <p class="login-subtitle mb-0">Escribe el código de 6 dígitos que te enviamos al correo y crea tu nueva contraseña.</p>
+            </div>
+
+            <div id="codigoError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
+
+            <form method="post" action="{{ url_for('auth.recuperar_verificar') }}" onsubmit="return validateCodigo(event)" class="text-start">
+              <div class="mb-2">
+                <label for="codigo" class="form-neon-label">
+                  <i class="bi bi-123 me-1"></i> Código de verificación
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-shield-lock-fill"></i></span>
+                  <input type="text" name="codigo" id="codigo" class="form-control text-center fw-bold" style="letter-spacing: 6px;" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
+                </div>
+              </div>
+
+              <div class="mb-2">
+                <label for="nuevaPassword" class="form-neon-label">
+                  <i class="bi bi-lock me-1"></i> Nueva Contraseña
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+                  <input type="password" name="nueva_password" id="nuevaPassword" class="form-control" placeholder="Crea tu nueva contraseña" required autocomplete="new-password">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="confirmarNuevaPassword" class="form-neon-label">
+                  <i class="bi bi-shield-lock me-1"></i> Confirmar Nueva Contraseña
+                </label>
+                <div class="input-group input-group-neon mb-2">
+                  <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+                  <input type="password" name="confirmar_password" id="confirmarNuevaPassword" class="form-control" placeholder="Repite tu nueva contraseña" required autocomplete="new-password">
+                </div>
+              </div>
+
+              <div class="d-grid gap-2 mb-3">
+                <button type="submit" class="btn btn-neon-primary py-3">
+                  <i class="bi bi-check2-circle me-2"></i> Cambiar Contraseña
+                </button>
+              </div>
+            </form>
+
+            <div class="text-center pt-1">
+              <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('recover')">
+                ¿No te llegó? Solicitar otro código
+              </a>
+              <div class="mt-2">
+                <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('login')">
+                  Volver a iniciar sesión
+                </a>
+              </div>
             </div>
           </div>
 
@@ -187,21 +310,20 @@
 <!-- Script para Cambio de Formularios y Validación -->
 <script>
   function switchForm(targetMode) {
-    const loginPanel = document.getElementById('loginPanel');
-    const registerPanel = document.getElementById('registerPanel');
+    const paneles = {
+      login: document.getElementById('loginPanel'),
+      register: document.getElementById('registerPanel'),
+      recover: document.getElementById('recoverPanel'),
+      codigo: document.getElementById('codigoPanel'),
+    };
     const errorBox = document.getElementById('registerError');
     if (errorBox) errorBox.classList.add('d-none');
 
-    if (targetMode === 'register') {
-      loginPanel.classList.remove('panel-visible');
-      loginPanel.classList.add('panel-hidden');
-      registerPanel.classList.remove('panel-hidden');
-      registerPanel.classList.add('panel-visible');
-    } else {
-      registerPanel.classList.remove('panel-visible');
-      registerPanel.classList.add('panel-hidden');
-      loginPanel.classList.remove('panel-hidden');
-      loginPanel.classList.add('panel-visible');
+    // Muestra solo el panel pedido (login, register o recover) y oculta los demás.
+    for (const [modo, panel] of Object.entries(paneles)) {
+      const visible = modo === targetMode;
+      panel.classList.toggle('panel-visible', visible);
+      panel.classList.toggle('panel-hidden', !visible);
     }
   }
 
@@ -209,6 +331,21 @@
     const password = document.getElementById('regPasswordUser').value;
     const confirm = document.getElementById('confirmPassword').value;
     const errorBox = document.getElementById('registerError');
+
+    if (password !== confirm) {
+      event.preventDefault();
+      errorBox.textContent = 'Las contraseñas no coinciden. Por favor verifícalas.';
+      errorBox.classList.remove('d-none');
+      return false;
+    }
+    errorBox.classList.add('d-none');
+    return true;
+  }
+
+  function validateCodigo(event) {
+    const password = document.getElementById('nuevaPassword').value;
+    const confirm = document.getElementById('confirmarNuevaPassword').value;
+    const errorBox = document.getElementById('codigoError');
 
     if (password !== confirm) {
       event.preventDefault();

@@ -1,15 +1,19 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models.users import User
 from app.models.cultivo import Cultivo
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.ingreso import IngresoCultivo
 from app.models.actividad import ActividadCultivo
+from app.models.codigo_recuperacion import CodigoRecuperacion
 from app.utils.helpers import formato_moneda
+from app.utils.correo import correo_valido, enviar_codigo_recuperacion
 from app import db
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from time import time
 from collections import defaultdict
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 
 bp = Blueprint('auth', __name__)
 
@@ -104,6 +108,115 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('auth.dashboard'))
     return render_template("auth/login.html")
+
+# --- Recuperar contraseña con un código de 6 dígitos enviado al correo ---
+CODIGO_MINUTOS_VALIDEZ = 15
+CODIGO_INTENTOS_MAXIMOS = 5
+CODIGO_SEGUNDOS_ENTRE_ENVIOS = 60
+MENSAJE_CODIGO_ENVIADO = ('Si los datos corresponden a una cuenta con correo registrado, te enviamos '
+                          'un código de 6 dígitos. Revisa tu bandeja de entrada (y la carpeta de spam).')
+
+
+def _ahora():
+    """Fecha y hora actual en UTC, sin zona horaria (así se guarda en SQLite)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _buscar_cuenta(usuario_o_correo):
+    """Busca la cuenta por nombre de usuario o por correo electrónico."""
+    if '@' in usuario_o_correo:
+        return User.query.filter(db.func.lower(User.emailUser) == usuario_o_correo.lower()).first()
+    return User.query.filter_by(nameUser=usuario_o_correo).first()
+
+
+@bp.route('/recuperar', methods=['POST'])
+def recuperar_contrasena():
+    """
+    Paso 1 de "¿Olvidaste tu contraseña?": recibe el usuario o el correo y,
+    si la cuenta existe y tiene correo, le envía un código de 6 dígitos. El
+    mensaje que se muestra es siempre el mismo, exista o no la cuenta, para
+    no revelar qué usuarios están registrados.
+    """
+    usuario_correo = request.form.get('usuarioCorreo', '').strip()
+    if not usuario_correo:
+        flash('Escribe tu usuario o tu correo electrónico para recuperar la contraseña.', 'danger')
+        return render_template("auth/login.html", show_recover=True)
+
+    session['recuperar_para'] = usuario_correo
+    user = _buscar_cuenta(usuario_correo)
+
+    if user and user.emailUser:
+        ultimo = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
+                  .order_by(CodigoRecuperacion.creado.desc()).first())
+        # Evita que alguien llene de correos a otra persona pidiendo códigos sin parar.
+        muy_seguido = ultimo and (_ahora() - ultimo.creado).total_seconds() < CODIGO_SEGUNDOS_ENTRE_ENVIOS
+        if not muy_seguido:
+            codigo = f"{secrets.randbelow(10**6):06d}"
+            try:
+                enviar_codigo_recuperacion(user.emailUser, user.nameUser, codigo, CODIGO_MINUTOS_VALIDEZ)
+            except Exception as e:
+                current_app.logger.error('No se pudo enviar el código de recuperación: %s', e)
+                flash('No pudimos enviar el correo en este momento. Intenta de nuevo más tarde.', 'danger')
+                return render_template("auth/login.html", show_recover=True)
+
+            # Solo queda vigente el código más reciente de la cuenta.
+            CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
+            db.session.add(CodigoRecuperacion(
+                idUser=user.idUser,
+                codigo_hash=generate_password_hash(codigo, method='pbkdf2:sha256'),
+                creado=_ahora(),
+                expira=_ahora() + timedelta(minutes=CODIGO_MINUTOS_VALIDEZ),
+                intentos=0,
+            ))
+            db.session.commit()
+
+    flash(MENSAJE_CODIGO_ENVIADO, 'info')
+    return render_template("auth/login.html", show_codigo=True)
+
+
+@bp.route('/recuperar/verificar', methods=['POST'])
+def recuperar_verificar():
+    """
+    Paso 2: recibe el código de 6 dígitos y la nueva contraseña. El código
+    vence, tiene un número limitado de intentos y se borra apenas se usa.
+    """
+    usuario_correo = session.get('recuperar_para')
+    if not usuario_correo:
+        flash('Primero solicita un código para recuperar tu contraseña.', 'danger')
+        return render_template("auth/login.html", show_recover=True)
+
+    codigo = request.form.get('codigo', '').strip()
+    nueva_password = request.form.get('nueva_password', '')
+    confirmar_password = request.form.get('confirmar_password', '')
+
+    if not nueva_password:
+        flash('Escribe tu nueva contraseña.', 'danger')
+        return render_template("auth/login.html", show_codigo=True)
+    if nueva_password != confirmar_password:
+        flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
+        return render_template("auth/login.html", show_codigo=True)
+
+    user = _buscar_cuenta(usuario_correo)
+    registro = None
+    if user:
+        registro = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
+                    .order_by(CodigoRecuperacion.creado.desc()).first())
+
+    vigente = (registro is not None and registro.expira > _ahora()
+               and registro.intentos < CODIGO_INTENTOS_MAXIMOS)
+    if not vigente or not check_password_hash(registro.codigo_hash, codigo):
+        if vigente:
+            registro.intentos += 1
+            db.session.commit()
+        flash('El código es incorrecto o ya venció. Revísalo o solicita uno nuevo.', 'danger')
+        return render_template("auth/login.html", show_codigo=True)
+
+    user.set_password(nueva_password)
+    CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
+    db.session.commit()
+    session.pop('recuperar_para', None)
+    flash('¡Listo! Tu contraseña se cambió. Ya puedes iniciar sesión con la nueva.', 'success')
+    return redirect(url_for('auth.login'))
 
 @bp.route('/dashboard')
 @login_required
@@ -259,6 +372,7 @@ def editar_perfil():
     if request.method == 'POST':
         password_actual = request.form.get('password_actual', '')
         nuevo_nombre = request.form.get('nameUser', '').strip()
+        nuevo_correo = request.form.get('emailUser', '').strip().lower()
         nueva_password = request.form.get('nueva_password', '')
         confirmar_password = request.form.get('confirmar_password', '')
 
@@ -278,6 +392,20 @@ def editar_perfil():
                 flash(f"El usuario '{nuevo_nombre}' ya está en uso por otra cuenta.", 'danger')
                 return redirect(url_for('auth.editar_perfil'))
 
+        # El correo es opcional, pero si se escribe debe ser válido y no
+        # puede estar registrado en otra cuenta (se usa para recuperar la
+        # contraseña con un código).
+        if nuevo_correo:
+            if not correo_valido(nuevo_correo):
+                flash('El correo electrónico no es válido.', 'danger')
+                return redirect(url_for('auth.editar_perfil'))
+            correo_en_uso = User.query.filter(
+                db.func.lower(User.emailUser) == nuevo_correo, User.idUser != current_user.idUser
+            ).first()
+            if correo_en_uso:
+                flash('Ese correo ya está registrado en otra cuenta.', 'danger')
+                return redirect(url_for('auth.editar_perfil'))
+
         if nueva_password or confirmar_password:
             if nueva_password != confirmar_password:
                 flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
@@ -285,6 +413,7 @@ def editar_perfil():
             current_user.set_password(nueva_password)
 
         current_user.nameUser = nuevo_nombre
+        current_user.emailUser = nuevo_correo or None
         db.session.commit()
         flash('Tus datos se actualizaron correctamente.', 'success')
         return redirect(url_for('auth.editar_perfil'))
