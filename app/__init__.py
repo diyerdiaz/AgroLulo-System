@@ -99,6 +99,7 @@ def create_app(config_extra=None):
             _asegurar_columnas('users', [
                 ('isAdmin', 'BOOLEAN DEFAULT 0'),
                 ('activo', 'BOOLEAN DEFAULT 1'),
+                ('emailUser', 'VARCHAR(120)'),
             ])
             _asegurar_columnas('cultivos', [
                 ('idUser', 'INTEGER'),
