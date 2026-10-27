@@ -53,4 +53,4 @@ def index():
             if os.path.exists(ruta_temporal):
                 os.remove(ruta_temporal)
 
-    return render_template('analisis.html', resultado=resultado)
+    return render_template('analisis/index.html', resultado=resultado)

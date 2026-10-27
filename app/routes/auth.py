@@ -5,6 +5,7 @@ from app.models.cultivo import Cultivo
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.ingreso import IngresoCultivo
 from app.models.actividad import ActividadCultivo
+from app.utils.helpers import formato_moneda
 from app import db
 from datetime import date
 from time import time
@@ -69,7 +70,7 @@ MESES_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'
 PALETA_CULTIVOS = ['#39ff14', '#4cc9f0', '#ffb703', '#b5179e', '#ff4d4d', '#06d6a0', '#8338ec', '#f72585']
 
 
-def _formato_moneda(valor):
+def formato_moneda(valor):
     """Da formato de moneda colombiana: separador de miles con punto, sin decimales."""
     return f"{valor:,.0f}".replace(',', '.')
 
@@ -81,7 +82,7 @@ def login():
         if restante > 0:
             minutos = max(1, round(restante / 60))
             flash(f'Demasiados intentos fallidos. Intenta de nuevo en unos {minutos} minuto(s).', 'danger')
-            return render_template("login.html")
+            return render_template("auth/login.html")
 
         nameUser = request.form['nameUser']
         passwordUser = request.form['passwordUser']
@@ -106,7 +107,7 @@ def login():
     
     if current_user.is_authenticated:
         return redirect(url_for('auth.dashboard'))
-    return render_template("login.html")
+    return render_template("auth/login.html")
 
 @bp.route('/dashboard')
 @login_required
@@ -231,7 +232,7 @@ def dashboard():
     }
 
     return render_template(
-        'dashboard.html',
+        'auth/dashboard.html',
         total_cultivos=total_cultivos,
         total_hectareas=round(total_hectareas, 1),
         total_plantas=total_plantas,
@@ -292,7 +293,7 @@ def editar_perfil():
         flash('Tus datos se actualizaron correctamente.', 'success')
         return redirect(url_for('auth.editar_perfil'))
 
-    return render_template('editar_perfil.html')
+    return render_template('auth/editar_perfil.html')
 
 
 @bp.route('/usuarios')
@@ -310,7 +311,7 @@ def usuarios():
         usuarios, pagina_solicitada, USUARIOS_LISTA_POR_PAGINA
     )
     return render_template(
-        'usuarios.html',
+        'auth/usuarios.html',
         usuarios=usuarios_pagina,
         total_usuarios=len(usuarios),
         pagina_actual=pagina_actual,
@@ -421,20 +422,20 @@ def estadisticas_usuarios():
                 'hectareas': c.hectareas or 0.0,
                 'fecha_sembrado': c.fecha_sembrado,
                 'ingresos': ingresos_c,
-                'ingresos_fmt': _formato_moneda(ingresos_c),
+                'ingresos_fmt': formato_moneda(ingresos_c),
                 'gastos': gastos_c,
-                'gastos_fmt': _formato_moneda(gastos_c),
+                'gastos_fmt': formato_moneda(gastos_c),
                 'ganancias': ingresos_c - gastos_c,
-                'ganancias_fmt': _formato_moneda(ingresos_c - gastos_c),
+                'ganancias_fmt': formato_moneda(ingresos_c - gastos_c),
                 'produccion': produccion_c,
             })
 
         total_ganancias = total_ingresos - total_gastos
         resumen.append({
             'usuario': u,
-            'total_ingresos_fmt': _formato_moneda(total_ingresos),
-            'total_gastos_fmt': _formato_moneda(total_gastos),
-            'total_ganancias_fmt': _formato_moneda(total_ganancias),
+            'total_ingresos_fmt': formato_moneda(total_ingresos),
+            'total_gastos_fmt': formato_moneda(total_gastos),
+            'total_ganancias_fmt': formato_moneda(total_ganancias),
             'num_cultivos': len(cultivos),
             'total_hectareas': total_hectareas,
             'total_ingresos': total_ingresos,
@@ -450,7 +451,7 @@ def estadisticas_usuarios():
     )
 
     return render_template(
-        'estadisticas_usuarios.html',
+        'auth/estadisticas_usuarios.html',
         resumen=resumen_pagina,
         pagina_actual=pagina_actual,
         total_paginas=total_paginas,

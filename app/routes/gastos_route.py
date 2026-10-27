@@ -4,21 +4,11 @@ from app.models.cultivo import Cultivo
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.ingreso import IngresoCultivo
 from app.models.actividad import ActividadCultivo
+from app.utils.helpers import formato_moneda, cultivo_de_usuario
 from app import db
 from datetime import datetime
 
 bp = Blueprint('gastos', __name__, url_prefix='/gastos')
-
-
-def _formato_moneda(valor):
-    """Da formato de moneda colombiana: separador de miles con punto, sin decimales."""
-    return f"{valor:,.0f}".replace(',', '.')
-
-
-def _cultivo_de_usuario(id):
-    """Trae el cultivo por id, pero solo si es del usuario que inició
-    sesión: cada cuenta ve y administra únicamente sus propios cultivos."""
-    return Cultivo.query.filter_by(idCultivo=id, idUser=current_user.idUser).first_or_404()
 
 
 @bp.route('/')
@@ -52,9 +42,9 @@ def index():
 
         datos['num_gastos'] = num_gastos
         datos['fecha_sembrado'] = c.fecha_sembrado
-        datos['gastos_fmt'] = _formato_moneda(datos['gastos'])
-        datos['ingresos_fmt'] = _formato_moneda(datos['ingresos'])
-        datos['ganancias_fmt'] = _formato_moneda(datos['ganancias'])
+        datos['gastos_fmt'] = formato_moneda(datos['gastos'])
+        datos['ingresos_fmt'] = formato_moneda(datos['ingresos'])
+        datos['ganancias_fmt'] = formato_moneda(datos['ganancias'])
         filas.append(datos)
         total_gastos += datos['gastos']
         total_ingresos += datos['ingresos']
@@ -67,16 +57,16 @@ def index():
         total_gastos=total_gastos,
         total_ingresos=total_ingresos,
         total_ganancias=total_ganancias,
-        total_gastos_fmt=_formato_moneda(total_gastos),
-        total_ingresos_fmt=_formato_moneda(total_ingresos),
-        total_ganancias_fmt=_formato_moneda(total_ganancias),
+        total_gastos_fmt=formato_moneda(total_gastos),
+        total_ingresos_fmt=formato_moneda(total_ingresos),
+        total_ganancias_fmt=formato_moneda(total_ganancias),
     )
 
 
 @bp.route('/cultivo/<int:id>')
 @login_required
 def ver(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     gastos = GastoCultivo.query.filter_by(idCultivo=id) \
         .order_by(GastoCultivo.fecha.desc(), GastoCultivo.idGasto.desc()).all()
 
@@ -84,7 +74,7 @@ def ver(id):
     total = 0.0
     for g in gastos:
         f = g.to_dict()
-        f['valor_fmt'] = _formato_moneda(f['valor'])
+        f['valor_fmt'] = formato_moneda(f['valor'])
         filas.append(f)
         total += f['valor']
 
@@ -93,7 +83,7 @@ def ver(id):
         cultivo=cultivo,
         gastos=filas,
         total=total,
-        total_fmt=_formato_moneda(total),
+        total_fmt=formato_moneda(total),
         tipos_gasto=TIPOS_GASTO,
     )
 
@@ -101,7 +91,7 @@ def ver(id):
 @bp.route('/cultivo/<int:id>/agregar', methods=['POST'])
 @login_required
 def agregar(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
 
     tipo = request.form.get('tipo', '').strip()
     valor_raw = request.form.get('valor', '').strip()
@@ -139,7 +129,7 @@ def agregar(id):
     # El gasto también se refleja de una vez como una etiqueta en el
     # Calendario de este cultivo, en el mismo día que se eligió al
     # registrarlo.
-    nota_actividad = f"{TIPOS_GASTO[tipo]['label']}: $ {_formato_moneda(valor)}"
+    nota_actividad = f"{TIPOS_GASTO[tipo]['label']}: $ {formato_moneda(valor)}"
     if descripcion:
         nota_actividad += f" — {descripcion}"
     db.session.add(ActividadCultivo(
@@ -152,14 +142,14 @@ def agregar(id):
 
     db.session.commit()
 
-    flash(f"Gasto de $ {_formato_moneda(valor)} registrado correctamente.", 'success')
+    flash(f"Gasto de $ {formato_moneda(valor)} registrado correctamente.", 'success')
     return redirect(url_for('gastos.ver', id=id))
 
 
 @bp.route('/cultivo/<int:id>/gasto/<int:gasto_id>/editar')
 @login_required
 def editar_gasto(id, gasto_id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     gasto = GastoCultivo.query.filter_by(idGasto=gasto_id, idCultivo=id).first_or_404()
     return render_template('gastos/editar.html', cultivo=cultivo, gasto=gasto, tipos_gasto=TIPOS_GASTO)
 
@@ -167,7 +157,7 @@ def editar_gasto(id, gasto_id):
 @bp.route('/cultivo/<int:id>/gasto/<int:gasto_id>/actualizar', methods=['POST'])
 @login_required
 def actualizar_gasto(id, gasto_id):
-    _cultivo_de_usuario(id)
+    cultivo_de_usuario(id)
     gasto = GastoCultivo.query.filter_by(idGasto=gasto_id, idCultivo=id).first_or_404()
 
     tipo = request.form.get('tipo', '').strip()
@@ -200,7 +190,7 @@ def actualizar_gasto(id, gasto_id):
 
     # La etiqueta que este gasto había dejado en el Calendario se
     # actualiza igual (mismo tipo, valor, descripción y fecha nuevos).
-    nota_actividad = f"{TIPOS_GASTO[tipo]['label']}: $ {_formato_moneda(valor)}"
+    nota_actividad = f"{TIPOS_GASTO[tipo]['label']}: $ {formato_moneda(valor)}"
     if descripcion:
         nota_actividad += f" — {descripcion}"
     actividad = ActividadCultivo.query.filter_by(idCultivo=id, idCogida=gasto_id, tipo='gasto').first()
@@ -224,7 +214,7 @@ def actualizar_gasto(id, gasto_id):
 @bp.route('/cultivo/<int:id>/eliminar/<int:gasto_id>', methods=['POST'])
 @login_required
 def eliminar(id, gasto_id):
-    _cultivo_de_usuario(id)
+    cultivo_de_usuario(id)
     gasto = GastoCultivo.query.filter_by(idGasto=gasto_id, idCultivo=id).first_or_404()
     db.session.delete(gasto)
 

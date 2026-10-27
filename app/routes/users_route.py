@@ -27,7 +27,7 @@ def add():
         ya_existe = User.query.filter_by(nameUser=nameUser).first()
         if ya_existe:
             flash(f"Ya existe una cuenta con el nombre de usuario '{nameUser}'. Elige otro nombre.", "danger")
-            return render_template('login.html', show_register=True)
+            return render_template('auth/login.html', show_register=True)
 
         # Las cuentas que se crean desde "Crear Cuenta Nueva" quedan
         # activas de una vez, sin necesidad de que el administrador las
@@ -38,4 +38,4 @@ def add():
         db.session.commit()
         flash("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.", "success")
         return redirect(url_for('auth.login'))
-    return render_template('login.html', show_register=True)
+    return render_template('auth/login.html', show_register=True)

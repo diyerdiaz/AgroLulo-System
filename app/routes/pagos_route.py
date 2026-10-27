@@ -4,15 +4,11 @@ from datetime import datetime, date
 from app.models.cultivo import Cultivo
 from app.models.ingreso import IngresoCultivo, TIPOS_INGRESO, TIPOS_LULO_COGIDA
 from app.models.actividad import ActividadCultivo
-from app.routes.ingresos_route import _grupo_de, _filas_de_cosecha, _paginar, _cultivo_de_usuario
+from app.utils.helpers import formato_moneda, cultivo_de_usuario
+from app.utils.cosechas import grupo_de, filas_de_cosecha, paginar
 from app import db
 
 bp = Blueprint('pagos', __name__, url_prefix='/pagos')
-
-
-def _formato_moneda(valor):
-    """Da formato de moneda colombiana: separador de miles con punto, sin decimales."""
-    return f"{valor:,.0f}".replace(',', '.')
 
 
 @bp.route('/')
@@ -52,11 +48,11 @@ def index():
             'fecha_sembrado': c.fecha_sembrado,
             'num_cosechas': num_cosechas,
             'esperado': esperado,
-            'esperado_fmt': _formato_moneda(esperado),
+            'esperado_fmt': formato_moneda(esperado),
             'recibido': recibido,
-            'recibido_fmt': _formato_moneda(recibido),
+            'recibido_fmt': formato_moneda(recibido),
             'pendiente': pendiente,
-            'pendiente_fmt': _formato_moneda(pendiente),
+            'pendiente_fmt': formato_moneda(pendiente),
             'estado': estado,
             'porcentaje': porcentaje,
         })
@@ -72,9 +68,9 @@ def index():
         total_esperado=total_esperado,
         total_recibido=total_recibido,
         total_pendiente=total_pendiente,
-        total_esperado_fmt=_formato_moneda(total_esperado),
-        total_recibido_fmt=_formato_moneda(total_recibido),
-        total_pendiente_fmt=_formato_moneda(total_pendiente),
+        total_esperado_fmt=formato_moneda(total_esperado),
+        total_recibido_fmt=formato_moneda(total_recibido),
+        total_pendiente_fmt=formato_moneda(total_pendiente),
     )
 
 
@@ -86,7 +82,7 @@ def ver(id):
     misma cogida en un solo registro, igual que en Ingresos), cuáles ya
     están pagas (con fecha y monto) y cuáles siguen pendientes de pago.
     """
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     ingresos = IngresoCultivo.query.filter_by(idCultivo=id).order_by(
         IngresoCultivo.fecha.asc(), IngresoCultivo.idIngreso.asc()
     ).all()
@@ -95,13 +91,13 @@ def ver(id):
     # sea la misma cosecha en las dos pantallas.
     numero_por_grupo = {
         grupo: idx + 1
-        for idx, grupo in enumerate(sorted({_grupo_de(i) for i in ingresos}))
+        for idx, grupo in enumerate(sorted({grupo_de(i) for i in ingresos}))
     }
 
     grupos = {}
     orden_grupos = []
     for i in ingresos:
-        clave = _grupo_de(i)
+        clave = grupo_de(i)
         if clave not in grupos:
             grupos[clave] = []
             orden_grupos.append(clave)
@@ -134,11 +130,11 @@ def ver(id):
                 'icon': info['icon'],
                 'color': info['color'],
                 'cantidad_canastillas': x.cantidad_canastillas,
-                'precio_canastilla_fmt': _formato_moneda(x.precio_canastilla) if x.precio_canastilla else None,
+                'precio_canastilla_fmt': formato_moneda(x.precio_canastilla) if x.precio_canastilla else None,
                 'valor': x.valor,
-                'valor_fmt': _formato_moneda(x.valor),
-                'pagado_fmt': _formato_moneda(pagado),
-                'saldo_fmt': _formato_moneda(saldo),
+                'valor_fmt': formato_moneda(x.valor),
+                'pagado_fmt': formato_moneda(pagado),
+                'saldo_fmt': formato_moneda(saldo),
                 'esta_pagada': saldo <= 0,
             })
 
@@ -148,11 +144,11 @@ def ver(id):
             'fecha': filas_grupo[0].fecha,
             'cantidad_tipos': len(filas_grupo),
             'valor_total': valor_total,
-            'valor_total_fmt': _formato_moneda(valor_total),
+            'valor_total_fmt': formato_moneda(valor_total),
             'pagado_total': pagado_total,
-            'pagado_total_fmt': _formato_moneda(pagado_total),
+            'pagado_total_fmt': formato_moneda(pagado_total),
             'saldo_total': saldo_total,
-            'saldo_total_fmt': _formato_moneda(saldo_total),
+            'saldo_total_fmt': formato_moneda(saldo_total),
             'esta_pagada': esta_pagada,
             'fecha_pago': fecha_pago,
             'tipos': tipos,
@@ -170,7 +166,7 @@ def ver(id):
     # cosechas; la lista de abajo se recorta a 5 por página.
     total_cosechas = len(cosechas)
     pagina_solicitada = request.args.get('pagina', 1, type=int)
-    cosechas_pagina, pagina_actual, total_paginas = _paginar(cosechas, pagina_solicitada)
+    cosechas_pagina, pagina_actual, total_paginas = paginar(cosechas, pagina_solicitada)
 
     return render_template(
         'pagos/ver.html',
@@ -179,9 +175,9 @@ def ver(id):
         total_cosechas=total_cosechas,
         pagina_actual=pagina_actual,
         total_paginas=total_paginas,
-        esperado_fmt=_formato_moneda(esperado),
-        recibido_fmt=_formato_moneda(recibido),
-        pendiente_fmt=_formato_moneda(pendiente),
+        esperado_fmt=formato_moneda(esperado),
+        recibido_fmt=formato_moneda(recibido),
+        pendiente_fmt=formato_moneda(pendiente),
         hay_pendientes=pendiente > 0,
     )
 
@@ -190,7 +186,7 @@ def _sincronizar_actividad_pago(id_cultivo, grupo_id):
     """Mantiene al día la etiqueta 'Pago Recibido' de una cosecha en el
     Calendario: la crea o actualiza mientras tenga algo pagado, y la quita
     si el pago queda en $ 0 (por ejemplo, al editar o eliminar el pago)."""
-    filas = _filas_de_cosecha(id_cultivo, grupo_id)
+    filas = filas_de_cosecha(id_cultivo, grupo_id)
     actividad = ActividadCultivo.query.filter_by(
         idCultivo=id_cultivo, idCogida=grupo_id, tipo='pago'
     ).first()
@@ -210,7 +206,7 @@ def _sincronizar_actividad_pago(id_cultivo, grupo_id):
             db.session.delete(actividad)
         return
 
-    nota = f"Pago recibido: $ {_formato_moneda(pagado_total)} de esta cosecha (valor $ {_formato_moneda(valor_total)})."
+    nota = f"Pago recibido: $ {formato_moneda(pagado_total)} de esta cosecha (valor $ {formato_moneda(valor_total)})."
     if actividad:
         actividad.fecha = fecha_pago
         actividad.nota = nota
@@ -233,7 +229,7 @@ def registrar_pago(id):
     y sobra dinero, el sobrante se abona automáticamente a la siguiente
     cosecha pendiente (y así sucesivamente).
     """
-    _cultivo_de_usuario(id)
+    cultivo_de_usuario(id)
 
     try:
         monto = float(request.form.get('monto', 0) or 0)
@@ -273,7 +269,7 @@ def registrar_pago(id):
         c.fecha_pago = fecha_pago
         restante -= aplicar
         cosechas_cubiertas += 1
-        grupos_tocados.add(_grupo_de(c))
+        grupos_tocados.add(grupo_de(c))
         if restante <= 0:
             break
 
@@ -283,7 +279,7 @@ def registrar_pago(id):
         ultima = cosechas[-1]
         ultima.monto_pagado = (ultima.monto_pagado or 0.0) + restante
         ultima.fecha_pago = fecha_pago
-        grupos_tocados.add(_grupo_de(ultima))
+        grupos_tocados.add(grupo_de(ultima))
         restante = 0
 
     # Cada cosecha que recibió plata en este pago actualiza (o crea) su
@@ -293,7 +289,7 @@ def registrar_pago(id):
 
     db.session.commit()
     flash(
-        f"Pago de $ {_formato_moneda(monto)} registrado el {fecha_pago.strftime('%d/%m/%Y')} "
+        f"Pago de $ {formato_moneda(monto)} registrado el {fecha_pago.strftime('%d/%m/%Y')} "
         f"({cosechas_cubiertas} cosecha(s) cubierta(s)).",
         'success'
     )
@@ -306,7 +302,7 @@ def _numero_de_cosecha(id_cultivo, grupo_id):
     todos = IngresoCultivo.query.filter_by(idCultivo=id_cultivo).all()
     numero_por_grupo = {
         grupo: idx + 1
-        for idx, grupo in enumerate(sorted({_grupo_de(i) for i in todos}))
+        for idx, grupo in enumerate(sorted({grupo_de(i) for i in todos}))
     }
     return numero_por_grupo.get(grupo_id, '?')
 
@@ -318,8 +314,8 @@ def pago_editar(id, grupo_id):
     Corrige el monto y/o la fecha del pago ya registrado para una Cosecha
     completa (por si se digitó mal, por ejemplo con un cero de más).
     """
-    cultivo = _cultivo_de_usuario(id)
-    filas = _filas_de_cosecha(id, grupo_id)
+    cultivo = cultivo_de_usuario(id)
+    filas = filas_de_cosecha(id, grupo_id)
     if not filas:
         flash('Esa cosecha ya no existe.', 'danger')
         return redirect(url_for('pagos.ver', id=id))
@@ -336,7 +332,7 @@ def pago_editar(id, grupo_id):
         numero=_numero_de_cosecha(id, grupo_id),
         fecha_cosecha=filas[0].fecha,
         valor_total=valor_total,
-        valor_total_fmt=_formato_moneda(valor_total),
+        valor_total_fmt=formato_moneda(valor_total),
         pagado_total=pagado_total,
         fecha_pago=fecha_pago,
     )
@@ -345,8 +341,8 @@ def pago_editar(id, grupo_id):
 @bp.route('/cultivo/<int:id>/cosecha/<int:grupo_id>/pago/actualizar', methods=['POST'])
 @login_required
 def pago_actualizar(id, grupo_id):
-    _cultivo_de_usuario(id)
-    filas = _filas_de_cosecha(id, grupo_id)
+    cultivo_de_usuario(id)
+    filas = filas_de_cosecha(id, grupo_id)
     if not filas:
         flash('Esa cosecha ya no existe.', 'danger')
         return redirect(url_for('pagos.ver', id=id))
@@ -361,7 +357,7 @@ def pago_actualizar(id, grupo_id):
 
     valor_total = sum(x.valor for x in filas)
     if nuevo_monto > valor_total:
-        flash(f"El monto pagado no puede ser mayor al valor de la cosecha ($ {_formato_moneda(valor_total)}).", 'danger')
+        flash(f"El monto pagado no puede ser mayor al valor de la cosecha ($ {formato_moneda(valor_total)}).", 'danger')
         return redirect(url_for('pagos.pago_editar', id=id, grupo_id=grupo_id))
 
     fecha_pago = None
@@ -388,7 +384,7 @@ def pago_actualizar(id, grupo_id):
     _sincronizar_actividad_pago(id, grupo_id)
 
     db.session.commit()
-    flash(f"Pago de la cosecha corregido a $ {_formato_moneda(nuevo_monto)}.", 'success')
+    flash(f"Pago de la cosecha corregido a $ {formato_moneda(nuevo_monto)}.", 'success')
     return redirect(url_for('pagos.ver', id=id))
 
 
@@ -397,8 +393,8 @@ def pago_actualizar(id, grupo_id):
 def pago_eliminar(id, grupo_id):
     """Borra el pago registrado de esta Cosecha (vuelve a quedar pendiente
     por el valor completo), sin borrar la cosecha ni sus datos de cogida."""
-    _cultivo_de_usuario(id)
-    filas = _filas_de_cosecha(id, grupo_id)
+    cultivo_de_usuario(id)
+    filas = filas_de_cosecha(id, grupo_id)
     if not filas:
         flash('Esa cosecha ya no existe.', 'danger')
         return redirect(url_for('pagos.ver', id=id))

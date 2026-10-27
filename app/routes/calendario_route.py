@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.models.cultivo import Cultivo
 from app.models.actividad import ActividadCultivo, TIPOS_ACTIVIDAD, TIPOS_SELECCIONABLES
+from app.utils.helpers import cultivo_de_usuario
 from app import db
 import calendar
 import json
@@ -16,12 +17,6 @@ MESES_ES = [
 DIAS_SEMANA_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 
-def _cultivo_de_usuario(id):
-    """Trae el cultivo por id, pero solo si es del usuario que inició
-    sesión: cada cuenta ve y administra únicamente sus propios cultivos."""
-    return Cultivo.query.filter_by(idCultivo=id, idUser=current_user.idUser).first_or_404()
-
-
 @bp.route('/')
 @login_required
 def index():
@@ -34,7 +29,7 @@ def index():
 @login_required
 def ver(id):
     """Calendario mensual de un cultivo específico, navegable por mes/año."""
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
 
     hoy = date.today()
     year = request.args.get('year', hoy.year, type=int)
@@ -173,7 +168,7 @@ def ver(id):
 @login_required
 def agregar_actividad(id):
     """Agrega una etiqueta/actividad a un día del calendario del cultivo."""
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
 
     fecha_raw = request.form.get('fecha', '').strip()
     tipo = request.form.get('tipo', '').strip()
@@ -203,7 +198,7 @@ def agregar_actividad(id):
 @login_required
 def eliminar_actividad(id, actividad_id):
     """Elimina una etiqueta/actividad registrada manualmente."""
-    _cultivo_de_usuario(id)
+    cultivo_de_usuario(id)
     actividad = ActividadCultivo.query.filter_by(idActividad=actividad_id, idCultivo=id).first_or_404()
     year = request.form.get('year', type=int) or date.today().year
     month = request.form.get('month', type=int) or date.today().month

@@ -4,21 +4,12 @@ from app.models.cultivo import Cultivo
 from app.models.ingreso import IngresoCultivo, TIPOS_INGRESO, TIPOS_LULO_COGIDA
 from app.models.gasto import GastoCultivo
 from app.models.actividad import ActividadCultivo
+from app.utils.helpers import formato_moneda, cultivo_de_usuario
+from app.utils.cosechas import grupo_de, filas_de_cosecha, paginar
 from app import db
 from datetime import datetime
 
 bp = Blueprint('ingresos', __name__, url_prefix='/ingresos')
-
-
-def _formato_moneda(valor):
-    """Da formato de moneda colombiana: separador de miles con punto, sin decimales."""
-    return f"{valor:,.0f}".replace(',', '.')
-
-
-def _cultivo_de_usuario(id):
-    """Trae el cultivo por id, pero solo si es del usuario que inició
-    sesión: cada cuenta ve y administra únicamente sus propios cultivos."""
-    return Cultivo.query.filter_by(idCultivo=id, idUser=current_user.idUser).first_or_404()
 
 
 @bp.route('/')
@@ -52,9 +43,9 @@ def index():
 
         datos['num_ingresos'] = num_ingresos
         datos['fecha_sembrado'] = c.fecha_sembrado
-        datos['gastos_fmt'] = _formato_moneda(datos['gastos'])
-        datos['ingresos_fmt'] = _formato_moneda(datos['ingresos'])
-        datos['ganancias_fmt'] = _formato_moneda(datos['ganancias'])
+        datos['gastos_fmt'] = formato_moneda(datos['gastos'])
+        datos['ingresos_fmt'] = formato_moneda(datos['ingresos'])
+        datos['ganancias_fmt'] = formato_moneda(datos['ganancias'])
         filas.append(datos)
         total_ingresos += datos['ingresos']
         total_gastos += datos['gastos']
@@ -67,47 +58,16 @@ def index():
         total_ingresos=total_ingresos,
         total_gastos=total_gastos,
         total_ganancias=total_ganancias,
-        total_ingresos_fmt=_formato_moneda(total_ingresos),
-        total_gastos_fmt=_formato_moneda(total_gastos),
-        total_ganancias_fmt=_formato_moneda(total_ganancias),
+        total_ingresos_fmt=formato_moneda(total_ingresos),
+        total_gastos_fmt=formato_moneda(total_gastos),
+        total_ganancias_fmt=formato_moneda(total_ganancias),
     )
-
-
-def _grupo_de(ingreso):
-    """La clave de agrupación de una cogida: su idCogida, o su propio
-    idIngreso si es un registro viejo de antes de que existiera el
-    agrupamiento (así cada uno queda como su propia Cosecha)."""
-    return ingreso.idCogida or ingreso.idIngreso
-
-
-def _filas_de_cosecha(id_cultivo, grupo_id):
-    """Todos los registros (Grueso/Parejo/Riche) que pertenecen a una misma
-    Cosecha dentro de un cultivo."""
-    filas = IngresoCultivo.query.filter_by(idCultivo=id_cultivo, idCogida=grupo_id).all()
-    if filas:
-        return filas
-    solo = IngresoCultivo.query.filter_by(idCultivo=id_cultivo, idIngreso=grupo_id, idCogida=None).first()
-    return [solo] if solo else []
-
-
-COSECHAS_POR_PAGINA = 5
-
-
-def _paginar(lista, pagina_solicitada):
-    """Recorta una lista ya ordenada a la página pedida (5 por página), y
-    devuelve también en qué página quedó realmente y cuántas hay en total,
-    para poder pintar los botones de Anterior/Siguiente."""
-    total = len(lista)
-    total_paginas = max(1, (total + COSECHAS_POR_PAGINA - 1) // COSECHAS_POR_PAGINA)
-    pagina = max(1, min(pagina_solicitada or 1, total_paginas))
-    inicio = (pagina - 1) * COSECHAS_POR_PAGINA
-    return lista[inicio:inicio + COSECHAS_POR_PAGINA], pagina, total_paginas
 
 
 @bp.route('/cultivo/<int:id>')
 @login_required
 def ver(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     ingresos = IngresoCultivo.query.filter_by(idCultivo=id) \
         .order_by(IngresoCultivo.fecha.desc(), IngresoCultivo.idIngreso.desc()).all()
 
@@ -116,13 +76,13 @@ def ver(id):
     # reciente hacia atrás.
     numero_por_grupo = {
         grupo: idx + 1
-        for idx, grupo in enumerate(sorted({_grupo_de(i) for i in ingresos}))
+        for idx, grupo in enumerate(sorted({grupo_de(i) for i in ingresos}))
     }
 
     grupos = {}
     orden_grupos = []
     for i in ingresos:
-        clave = _grupo_de(i)
+        clave = grupo_de(i)
         if clave not in grupos:
             grupos[clave] = []
             orden_grupos.append(clave)
@@ -149,15 +109,15 @@ def ver(id):
                 'color': info['color'],
                 'cantidad_canastillas': x.cantidad_canastillas,
                 'precio_canastilla': x.precio_canastilla,
-                'precio_canastilla_fmt': _formato_moneda(x.precio_canastilla) if x.precio_canastilla else None,
+                'precio_canastilla_fmt': formato_moneda(x.precio_canastilla) if x.precio_canastilla else None,
                 'peso_canastilla': x.peso_canastilla,
                 'kilos': round(x.kilos, 1),
                 'kilos_sobrantes': x.kilos_sobrantes or 0.0,
                 'valor_sobra': x.valor_sobra,
-                'valor_sobra_fmt': _formato_moneda(x.valor_sobra) if x.valor_sobra else None,
+                'valor_sobra_fmt': formato_moneda(x.valor_sobra) if x.valor_sobra else None,
                 'tiene_sobra': bool(x.kilos_sobrantes and x.kilos_sobrantes > 0),
                 'valor': x.valor,
-                'valor_fmt': _formato_moneda(x.valor),
+                'valor_fmt': formato_moneda(x.valor),
             })
 
         cosechas.append({
@@ -165,7 +125,7 @@ def ver(id):
             'numero': numero_por_grupo[clave],
             'fecha': filas_grupo[0].fecha,
             'valor_total': valor_total,
-            'valor_total_fmt': _formato_moneda(valor_total),
+            'valor_total_fmt': formato_moneda(valor_total),
             'kilos_total': round(kilos_total, 1),
             'tipos': tipos,
             'cantidad_tipos': len(tipos),
@@ -177,7 +137,7 @@ def ver(id):
     # la lista de abajo se recorta a 5 por página para que no crezca sin
     # límite en pantalla.
     pagina_solicitada = request.args.get('pagina', 1, type=int)
-    cosechas_pagina, pagina_actual, total_paginas = _paginar(cosechas, pagina_solicitada)
+    cosechas_pagina, pagina_actual, total_paginas = paginar(cosechas, pagina_solicitada)
 
     return render_template(
         'ingresos/ver.html',
@@ -186,7 +146,7 @@ def ver(id):
         pagina_actual=pagina_actual,
         total_paginas=total_paginas,
         total=total,
-        total_fmt=_formato_moneda(total),
+        total_fmt=formato_moneda(total),
         total_kilos=round(total_kilos, 1),
         tipos_ingreso=TIPOS_INGRESO,
     )
@@ -222,7 +182,7 @@ def agregar(id):
     diferente), más un ingreso libre "Otro" opcional. Se crea un registro
     de ingreso por cada tipo que venga con datos.
     """
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
 
     fecha_raw = request.form.get('fecha', '').strip()
     try:
@@ -296,19 +256,19 @@ def agregar(id):
         idCogida=grupo_id,
         tipo='cosecha',
         fecha=fecha,
-        nota=f"Cosecha registrada: {round(total_kilos, 1)} Kg por $ {_formato_moneda(total_registrado)}.",
+        nota=f"Cosecha registrada: {round(total_kilos, 1)} Kg por $ {formato_moneda(total_registrado)}.",
     ))
 
     db.session.commit()
 
-    flash(f"Cogida registrada: {len(nuevos)} ingreso(s) por un total de $ {_formato_moneda(total_registrado)}.", 'success')
+    flash(f"Cogida registrada: {len(nuevos)} ingreso(s) por un total de $ {formato_moneda(total_registrado)}.", 'success')
     return redirect(url_for('ingresos.ver', id=id))
 
 
 @bp.route('/cultivo/<int:id>/eliminar/<int:ingreso_id>', methods=['POST'])
 @login_required
 def eliminar(id, ingreso_id):
-    _cultivo_de_usuario(id)
+    cultivo_de_usuario(id)
     ingreso = IngresoCultivo.query.filter_by(idIngreso=ingreso_id, idCultivo=id).first_or_404()
     db.session.delete(ingreso)
     db.session.commit()
@@ -327,9 +287,9 @@ def _url_volver(origen, id):
 @bp.route('/cultivo/<int:id>/cosecha/<int:grupo_id>/editar')
 @login_required
 def cosecha_editar(id, grupo_id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     origen = request.args.get('origen', 'ingresos')
-    filas = _filas_de_cosecha(id, grupo_id)
+    filas = filas_de_cosecha(id, grupo_id)
     if not filas:
         flash('Esa cosecha ya no existe.', 'danger')
         return redirect(_url_volver(origen, id))
@@ -351,9 +311,9 @@ def cosecha_editar(id, grupo_id):
 @bp.route('/cultivo/<int:id>/cosecha/<int:grupo_id>/actualizar', methods=['POST'])
 @login_required
 def cosecha_actualizar(id, grupo_id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     origen = request.form.get('origen', 'ingresos')
-    filas = _filas_de_cosecha(id, grupo_id)
+    filas = filas_de_cosecha(id, grupo_id)
     if not filas:
         flash('Esa cosecha ya no existe.', 'danger')
         return redirect(_url_volver(origen, id))
@@ -438,7 +398,7 @@ def cosecha_actualizar(id, grupo_id):
         for cantidad, precio, peso, kilos_sobrantes in a_guardar.values()
     )
     actividad = ActividadCultivo.query.filter_by(idCultivo=cultivo.idCultivo, idCogida=grupo_id, tipo='cosecha').first()
-    nota_actividad = f"Cosecha registrada: {round(total_kilos_actualizado, 1)} Kg por $ {_formato_moneda(total_actualizado)}."
+    nota_actividad = f"Cosecha registrada: {round(total_kilos_actualizado, 1)} Kg por $ {formato_moneda(total_actualizado)}."
     if actividad:
         actividad.fecha = fecha
         actividad.nota = nota_actividad
@@ -452,16 +412,16 @@ def cosecha_actualizar(id, grupo_id):
         ))
 
     db.session.commit()
-    flash(f"Cosecha actualizada: total $ {_formato_moneda(total_actualizado)}.", 'success')
+    flash(f"Cosecha actualizada: total $ {formato_moneda(total_actualizado)}.", 'success')
     return redirect(_url_volver(origen, id))
 
 
 @bp.route('/cultivo/<int:id>/cosecha/<int:grupo_id>/eliminar', methods=['POST'])
 @login_required
 def cosecha_eliminar(id, grupo_id):
-    _cultivo_de_usuario(id)
+    cultivo_de_usuario(id)
     origen = request.form.get('origen', 'ingresos')
-    filas = _filas_de_cosecha(id, grupo_id)
+    filas = filas_de_cosecha(id, grupo_id)
     if not filas:
         flash('Esa cosecha ya no existe.', 'danger')
         return redirect(_url_volver(origen, id))

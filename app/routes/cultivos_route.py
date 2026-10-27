@@ -4,16 +4,11 @@ from app.models.cultivo import Cultivo
 from app.models.ingreso import IngresoCultivo, TIPOS_INGRESO, TIPOS_LULO_COGIDA
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.actividad import ActividadCultivo
+from app.utils.helpers import cultivo_de_usuario
 from app import db
 from datetime import datetime, time
 
 bp = Blueprint('cultivos', __name__, url_prefix='/cultivos')
-
-
-def _cultivo_de_usuario(id):
-    """Trae el cultivo por id, pero solo si es del usuario que inició
-    sesión: cada cuenta ve y administra únicamente sus propios cultivos."""
-    return Cultivo.query.filter_by(idCultivo=id, idUser=current_user.idUser).first_or_404()
 
 
 @bp.route('/')
@@ -138,7 +133,7 @@ def add():
 @bp.route('/dashboard/<int:id>')
 @login_required
 def dashboard(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     datos = cultivo.to_dict()
 
     # Igual que en Ingresos/Gastos: si el cultivo ya tiene ingresos o gastos
@@ -203,13 +198,13 @@ def dashboard(id):
 @bp.route('/editar/<int:id>')
 @login_required
 def editar(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     return render_template('cultivos/editar.html', cultivo=cultivo)
 
 @bp.route('/actualizar/<int:id>', methods=['POST'])
 @login_required
 def actualizar(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
 
     nombre = request.form.get('nombre', '').strip()
     hectareas_raw = request.form.get('hectareas', '0').strip()
@@ -257,7 +252,7 @@ def actualizar(id):
 @bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
 def delete(id):
-    cultivo = _cultivo_de_usuario(id)
+    cultivo = cultivo_de_usuario(id)
     nombre = cultivo.nombre
 
     # Se borran primero todos los registros que dependen de este cultivo
