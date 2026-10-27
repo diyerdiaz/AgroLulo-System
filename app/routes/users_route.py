@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.users import User
+from app.utils.correo import correo_valido
 from app import db
 
 # NOTA: este blueprint alguna vez tuvo un sistema completo de gestión de
@@ -20,6 +21,7 @@ def add():
     if request.method == 'POST':
         nameUser = request.form['nameUser'].strip()
         passwordUser = request.form['passwordUser']
+        emailUser = request.form.get('emailUser', '').strip().lower()
 
         # El nombre de usuario debe ser único: si ya existe una cuenta con
         # ese nombre, se avisa con un mensaje claro en vez de dejar que
@@ -29,10 +31,19 @@ def add():
             flash(f"Ya existe una cuenta con el nombre de usuario '{nameUser}'. Elige otro nombre.", "danger")
             return render_template('auth/login.html', show_register=True)
 
+        # El correo es obligatorio en las cuentas nuevas: es la única forma
+        # de recuperar la contraseña si se olvida (se envía un código).
+        if not correo_valido(emailUser):
+            flash("Escribe un correo electrónico válido. Lo necesitarás si olvidas tu contraseña.", "danger")
+            return render_template('auth/login.html', show_register=True)
+        if User.query.filter(db.func.lower(User.emailUser) == emailUser).first():
+            flash("Ese correo ya está registrado en otra cuenta.", "danger")
+            return render_template('auth/login.html', show_register=True)
+
         # Las cuentas que se crean desde "Crear Cuenta Nueva" quedan
         # activas de una vez, sin necesidad de que el administrador las
         # active manualmente: por eso activo=True acá.
-        new_user = User(nameUser=nameUser, activo=True)
+        new_user = User(nameUser=nameUser, emailUser=emailUser, activo=True)
         new_user.set_password(passwordUser)
         db.session.add(new_user)
         db.session.commit()

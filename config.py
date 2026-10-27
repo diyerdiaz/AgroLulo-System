@@ -1,6 +1,14 @@
 import os
 import secrets
 
+# Carga las variables del archivo .env (SECRET_KEY, MAIL_*, ...) también
+# cuando se corre con "python run.py" o "flask run" fuera de Docker.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///flaskdb.sqlite'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -20,6 +28,16 @@ class Config:
     # TIMEOUT" / "Perhaps out of memory?"). 10 MB es de sobra para una
     # foto de celular en JPG/PNG.
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+
+    # Correo desde el que se envían los códigos de recuperación de
+    # contraseña. Los datos reales van en el archivo .env (nunca en el
+    # código). Con Gmail: activar la verificación en dos pasos en la cuenta
+    # y crear una "contraseña de aplicación" para MAIL_PASSWORD.
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+    MAIL_SENDER = os.environ.get('MAIL_SENDER') or os.environ.get('MAIL_USERNAME', '')
 
 #Comandos para descargar en instalar todas las librerias offline  
 #python -m pip download -r requirements.txt -d librerias
