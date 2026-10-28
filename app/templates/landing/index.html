@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}AgroLulo System - Contabilidad para tu cultivo de lulo{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<script>document.documentElement.classList.add('js-animaciones');</script>
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+<canvas id="bgCanvas"></canvas>
+
+<!-- Barra de navegación -->
+<nav class="landing-nav">
+  <div class="container d-flex align-items-center justify-content-between gap-3">
+    <a href="{{ url_for('landing.index') }}" class="landing-marca">
+      <span class="brand-logo-badge landing-logo">
+        <img src="{{ url_for('static', filename='img/agrolulo-logo.svg') }}" alt="" class="brand-logo-icon">
+      </span>
+      <span class="landing-marca-texto">Agro<span>Lulo</span> System</span>
+    </a>
+    <div class="landing-nav-links d-none d-lg-flex">
+      <a href="#que-es">¿Qué es?</a>
+      <a href="#funciones">Funciones</a>
+      <a href="#como-funciona">Cómo funciona</a>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('auth.login') }}" class="btn btn-neon-outline btn-sm px-3">
+        <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
+      </a>
+      <a href="{{ url_for('user.add') }}" class="btn btn-neon-primary btn-sm px-3 d-none d-sm-inline-block">
+        Crear cuenta
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Portada -->
+<header class="landing-hero">
+  <div class="container">
+    <div class="row align-items-center g-4 g-lg-5">
+      <div class="col-lg-6">
+        <span class="lulo-badge mb-3"><i class="bi bi-currency-dollar"></i> Contabilidad del cultivo de lulo</span>
+        <h1 class="landing-titulo" data-escritura aria-label="Controla el dinero de tu cultivo de lulo">
+          Controla el dinero de tu <span>cultivo de lulo</span>
+        </h1>
+        <p class="landing-texto">
+          AgroLulo System te ayuda a llevar las cuentas de tu cultivo sin complicaciones:
+          lo que gastas, lo que cosechas, lo que te pagan y lo que de verdad te queda.
+          Todo en un solo lugar, desde tu celular o tu computador.
+        </p>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          <a href="{{ url_for('user.add') }}" class="btn btn-neon-primary px-4 py-3">
+            <i class="bi bi-person-plus me-2"></i> Crear mi cuenta gratis
+          </a>
+          <a href="{{ url_for('auth.login') }}" class="btn btn-neon-outline px-4 py-3">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Ya tengo cuenta
+          </a>
+        </div>
+        <div class="landing-mini-datos">
+          <div><i class="bi bi-phone"></i> Funciona en el celular</div>
+          <div><i class="bi bi-shield-lock"></i> Tus datos son privados</div>
+          <div><i class="bi bi-envelope-check"></i> Recuperas tu clave por correo</div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="landing-hero-imagen">
+          <img src="{{ url_for('static', filename='img/lulo_finca.jpg') }}" alt="Finca de lulo con campesinos recogiendo la cosecha">
+          <div class="landing-tarjeta-flotante landing-tarjeta-1">
+            <i class="bi bi-graph-up-arrow"></i>
+            <div><small>Ganancia del cultivo</small><strong>Siempre a la vista</strong></div>
+          </div>
+          <div class="landing-tarjeta-flotante landing-tarjeta-2">
+            <i class="bi bi-basket3-fill"></i>
+            <div><small>Cosechas</small><strong>Grueso · Parejo · Riche</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ¿Qué es? -->
+<section id="que-es" class="landing-seccion">
+  <div class="container">
+    <div class="landing-encabezado revelar">
+      <span class="landing-etiqueta">¿Qué es AgroLulo?</span>
+      <h2>Las cuentas del cultivo, <span>claras y en orden</span></h2>
+      <p>
+        Muchas veces las cuentas del cultivo se llevan en un cuaderno o de memoria. AgroLulo reúne
+        todo en un solo lugar y lo convierte en números fáciles de entender, para que sepas en todo
+        momento si tu cultivo está siendo rentable.
+      </p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="landing-tarjeta revelar" style="--retraso: 0ms;">
+          <div class="landing-icono"><i class="bi bi-journal-x"></i></div>
+          <h3>Sin cuadernos perdidos</h3>
+          <p>Cada gasto, cosecha y pago queda guardado y organizado por cultivo. Nada se olvida.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="landing-tarjeta revelar" style="--retraso: 120ms;">
+          <div class="landing-icono"><i class="bi bi-calculator"></i></div>
+          <h3>Sin hacer cuentas a mano</h3>
+          <p>AgroLulo suma, resta y calcula tus ganancias por ti, cosecha tras cosecha.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="landing-tarjeta revelar" style="--retraso: 240ms;">
+          <div class="landing-icono"><i class="bi bi-lightbulb"></i></div>
+          <h3>Mejores decisiones</h3>
+          <p>Con los números claros sabes en qué se va la plata y qué lote te está dejando más.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Funciones -->
+<section id="funciones" class="landing-seccion landing-seccion-alterna">
+  <div class="container">
+    <div class="landing-encabezado revelar">
+      <span class="landing-etiqueta">Funciones</span>
+      <h2>Todo lo que necesitas para <span>tu finca</span></h2>
+    </div>
+    <div class="row g-4">
+      {% set funciones = [
+        ('bi-tree-fill', 'Tus cultivos', 'Registra cada lote con sus hectáreas, la cantidad de matas y la fecha de siembra.'),
+        ('bi-cash-coin', 'Gastos', 'Insumos y fertilizantes, jornales, transporte y todo lo que inviertes en el cultivo.'),
+        ('bi-basket3-fill', 'Cosechas', 'Anota canastillas, kilos y precio según la calidad del lulo: grueso, parejo o riche.'),
+        ('bi-patch-check-fill', 'Pagos', 'Lleva la cuenta de cuánto te han pagado de cada cosecha y cuánto te falta por cobrar.'),
+        ('bi-calendar3', 'Calendario', 'Organiza la siembra, el riego, las fumigaciones, las abonadas y las cosechas.'),
+        ('bi-bar-chart-fill', 'Ganancias reales', 'Un panel con gráficos de ingresos, gastos y utilidad de cada cultivo.'),
+        ('bi-person-lock', 'Cuenta personal', 'Cada productor ve únicamente la información de sus propios cultivos.'),
+        ('bi-envelope-check', 'Recuperación por correo', '¿Olvidaste tu contraseña? Te llega un código de 6 dígitos a tu correo.'),
+      ] %}
+      {% for icono, titulo, texto in funciones %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="landing-tarjeta landing-funcion revelar" style="--retraso: {{ (loop.index0 % 4) * 120 }}ms;">
+          <div class="landing-icono"><i class="bi {{ icono }}"></i></div>
+          <h3>{{ titulo }}</h3>
+          <p>{{ texto }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Cómo funciona -->
+<section id="como-funciona" class="landing-seccion">
+  <div class="container">
+    <div class="landing-encabezado revelar">
+      <span class="landing-etiqueta">Cómo funciona</span>
+      <h2>Empieza en <span>cuatro pasos</span></h2>
+    </div>
+    {% set pasos = [
+      ('Crea tu cuenta', 'Solo necesitas un usuario, tu correo y una contraseña.'),
+      ('Registra tu cultivo', 'Agrega tus lotes con sus hectáreas y la fecha de siembra.'),
+      ('Anota el día a día', 'Gastos, cosechas, pagos y labores, a medida que pasan.'),
+      ('Mira tus ganancias', 'El panel te muestra cuánto has invertido y cuánto te queda.'),
+    ] %}
+    <div class="landing-pasos" data-pasos>
+      {% for titulo, texto in pasos %}
+      <div class="landing-paso">
+        <div class="landing-paso-numero">{{ loop.index }}</div>
+        <h3>{{ titulo }}</h3>
+        <p>{{ texto }}</p>
+      </div>
+      {% if not loop.last %}
+      <div class="landing-flecha" aria-hidden="true">
+        <span class="landing-flecha-linea"></span>
+        <i class="bi bi-chevron-right"></i>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Llamado final -->
+<section class="landing-seccion pt-0">
+  <div class="container">
+    <div class="landing-cta revelar" style="--cta-fondo: url('{{ url_for('static', filename='img/correo_encabezado.jpg') }}');">
+      <h2>Tu cultivo merece <span>cuentas claras</span></h2>
+      <p>Crea tu cuenta y empieza hoy a llevar el control de tu cultivo de lulo.</p>
+      <div class="d-flex flex-wrap gap-3">
+        <a href="{{ url_for('user.add') }}" class="btn btn-neon-primary px-4 py-3">
+          <i class="bi bi-person-plus me-2"></i> Crear mi cuenta
+        </a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-neon-outline px-4 py-3">
+          <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar sesión
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pie -->
+<div class="landing-pie">
+  <div class="container d-flex flex-column align-items-center gap-1">
+    <span><strong>Agro<span>Lulo</span> System</strong> · Contabilidad para el cultivo de lulo</span>
+    <span>© {{ anio }} AgroLulo System · Todos los derechos reservados</span>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}

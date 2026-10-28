@@ -37,7 +37,7 @@ def verificar(client, codigo, nueva='nueva456', confirmar=None):
 
 
 def test_login_muestra_enlace_de_recuperacion(client):
-    assert 'Olvidaste tu contraseña'.encode() in client.get('/').data
+    assert 'Olvidaste tu contraseña'.encode() in client.get('/login').data
 
 
 @pytest.mark.parametrize('dato', ['lulero', 'LULERO@ejemplo.com'])

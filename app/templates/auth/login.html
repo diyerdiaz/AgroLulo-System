@@ -25,6 +25,12 @@
   {% endif %}
   {% endwith %}
 
+  <div class="login-volver">
+    <a href="{{ url_for('landing.index') }}" class="btn btn-neon-outline btn-sm px-3">
+      <i class="bi bi-arrow-left me-1"></i> Volver al inicio
+    </a>
+  </div>
+
   <div class="login-split-wrapper">
     <div class="login-card-container">
       <div class="row g-0">
@@ -360,4 +366,9 @@
 
 <!-- Script de Animaciones de Fondo -->
 <script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+<script>
+  // El login siempre usa el verde de la marca en el fondo animado, aunque la
+  // persona haya elegido otro tema (azul/naranja) dentro de la app.
+  if (window.updateCanvasTheme) window.updateCanvasTheme('green');
+</script>
 {% endblock %}

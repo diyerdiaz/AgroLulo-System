@@ -61,9 +61,11 @@ def create_app(config_extra=None):
     # usar nunca (no había ningún botón, formulario ni script que la
     # llamara); era código muerto que no cumplía ninguna función real.
     from app.routes import (
-        users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route
+        users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route,
+        landing_route
     )
 
+    app.register_blueprint(landing_route.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(users_route.bp)
     app.register_blueprint(cultivos_route.bp)
