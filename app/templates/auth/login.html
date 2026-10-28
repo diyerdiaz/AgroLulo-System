@@ -30,7 +30,7 @@
         <div class="col-lg-6 login-form-side text-center">
 
           <!-- 1. Panel Formulario de Inicio de Sesión -->
-          <div id="loginPanel" class="form-panel form-panel-centered {% if not show_register and not show_recover and not show_codigo %}panel-visible{% else %}panel-hidden{% endif %}">
+          <div id="loginPanel" class="form-panel form-panel-centered {% if not show_register and not show_recover and not show_codigo and not show_nueva %}panel-visible{% else %}panel-hidden{% endif %}">
             
             <!-- Logo Insignia Centrado y Encabezado -->
             <div class="mb-4 text-center">
@@ -209,7 +209,7 @@
             </div>
           </div>
 
-          <!-- 4. Panel Código de Verificación y Nueva Contraseña -->
+          <!-- 4. Panel Código de Verificación (solo el código) -->
           <div id="codigoPanel" class="form-panel form-panel-centered {% if show_codigo %}panel-visible{% else %}panel-hidden{% endif %}">
 
             <div class="mb-3 text-center">
@@ -219,23 +219,63 @@
               <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
                 <span class="fw-bold text-uppercase tracking-wider" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
               </div>
-              <h1 class="login-title mb-2">Nueva <span>Contraseña</span></h1>
-              <p class="login-subtitle mb-0">Escribe el código de 6 dígitos que te enviamos al correo y crea tu nueva contraseña.</p>
+              <h1 class="login-title mb-2">Verifica tu <span>Código</span></h1>
+              <p class="login-subtitle mb-0">Escribe el código de 6 dígitos que te enviamos a tu correo.</p>
             </div>
 
-            <div id="codigoError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
-
-            <form method="post" action="{{ url_for('auth.recuperar_verificar') }}" onsubmit="return validateCodigo(event)" class="text-start">
-              <div class="mb-2">
-                <label for="codigo" class="form-neon-label">
+            <form method="post" action="{{ url_for('auth.recuperar_codigo') }}" class="text-start" data-codigo-casillas>
+              <div class="mb-4">
+                <label for="codigoDigito1" class="form-neon-label d-block text-center">
                   <i class="bi bi-123 me-1"></i> Código de verificación
                 </label>
-                <div class="input-group input-group-neon mb-2">
-                  <span class="input-group-text"><i class="bi bi-shield-lock-fill"></i></span>
-                  <input type="text" name="codigo" id="codigo" class="form-control text-center fw-bold" style="letter-spacing: 6px;" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
+                <!-- 6 casillas, una por dígito (static/js/codigo-casillas.js);
+                     el código completo viaja en el campo oculto "codigo". -->
+                <div class="codigo-casillas" role="group" aria-label="Código de 6 dígitos">
+                  {% for i in range(1, 7) %}
+                  <input type="text" id="codigoDigito{{ i }}" class="codigo-casilla" inputmode="numeric" maxlength="1"
+                         autocomplete="{{ 'one-time-code' if i == 1 else 'off' }}" aria-label="Dígito {{ i }} de 6">
+                  {% endfor %}
                 </div>
+                <input type="hidden" name="codigo" id="codigo">
+                <div class="codigo-casillas-error d-none" role="alert">Escribe los 6 dígitos del código.</div>
               </div>
 
+              <div class="d-grid gap-2 mb-3">
+                <button type="submit" class="btn btn-neon-primary py-3">
+                  <i class="bi bi-shield-check me-2"></i> Verificar Código
+                </button>
+              </div>
+            </form>
+
+            <div class="text-center pt-1">
+              <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('recover')">
+                ¿No te llegó? Solicitar otro código
+              </a>
+              <div class="mt-2">
+                <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('login')">
+                  Volver a iniciar sesión
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Panel Nueva Contraseña (solo después de verificar el código) -->
+          <div id="nuevaPanel" class="form-panel form-panel-centered {% if show_nueva %}panel-visible{% else %}panel-hidden{% endif %}">
+
+            <div class="mb-3 text-center">
+              <div class="brand-logo-badge mx-auto">
+                <img src="{{ url_for('static', filename='img/agrolulo-logo.svg') }}" alt="AgroLulo" class="brand-logo-icon">
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                <span class="fw-bold text-uppercase tracking-wider" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
+              </div>
+              <h1 class="login-title mb-2">Nueva <span>Contraseña</span></h1>
+              <p class="login-subtitle mb-0">Tu código es correcto. Ahora crea tu nueva contraseña.</p>
+            </div>
+
+            <div id="nuevaError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
+
+            <form method="post" action="{{ url_for('auth.recuperar_nueva') }}" onsubmit="return validateNueva(event)" class="text-start">
               <div class="mb-2">
                 <label for="nuevaPassword" class="form-neon-label">
                   <i class="bi bi-lock me-1"></i> Nueva Contraseña
@@ -271,14 +311,9 @@
             </form>
 
             <div class="text-center pt-1">
-              <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('recover')">
-                ¿No te llegó? Solicitar otro código
+              <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('login')">
+                Volver a iniciar sesión
               </a>
-              <div class="mt-2">
-                <a href="javascript:void(0)" class="link-neon" style="font-size: 0.9rem;" onclick="switchForm('login')">
-                  Volver a iniciar sesión
-                </a>
-              </div>
             </div>
           </div>
 
@@ -329,6 +364,7 @@
       register: document.getElementById('registerPanel'),
       recover: document.getElementById('recoverPanel'),
       codigo: document.getElementById('codigoPanel'),
+      nueva: document.getElementById('nuevaPanel'),
     };
     const errorBox = document.getElementById('registerError');
     if (errorBox) errorBox.classList.add('d-none');
@@ -370,10 +406,10 @@
     return true;
   }
 
-  function validateCodigo(event) {
+  function validateNueva(event) {
     const password = document.getElementById('nuevaPassword').value;
     const confirm = document.getElementById('confirmarNuevaPassword').value;
-    const errorBox = document.getElementById('codigoError');
+    const errorBox = document.getElementById('nuevaError');
 
     if (!pintarReglas('nuevaReglas', password, '')) {
       event.preventDefault();
@@ -399,4 +435,5 @@
   // persona haya elegido otro tema (azul/naranja) dentro de la app.
   if (window.updateCanvasTheme) window.updateCanvasTheme('green');
 </script>
+<script src="{{ url_for('static', filename='js/codigo-casillas.js') }}"></script>
 {% endblock %}

@@ -29,11 +29,25 @@ def pedir_codigo(client, usuario_o_correo):
     return client.post('/recuperar', data={'usuarioCorreo': usuario_o_correo})
 
 
-def verificar(client, codigo, nueva='Nueva2026x', confirmar=None):
-    return client.post('/recuperar/verificar', data={
-        'codigo': codigo, 'nueva_password': nueva,
+def verificar_codigo(client, codigo):
+    """Paso 2: solo el código."""
+    return client.post('/recuperar/codigo', data={'codigo': codigo})
+
+
+def crear_nueva(client, nueva='Nueva2026x', confirmar=None):
+    """Paso 3: solo la nueva contraseña."""
+    return client.post('/recuperar/nueva', data={
+        'nueva_password': nueva,
         'confirmar_password': nueva if confirmar is None else confirmar,
     }, follow_redirects=True)
+
+
+def verificar(client, codigo, nueva='Nueva2026x', confirmar=None):
+    """Hace los dos pasos; si el código falla, devuelve la respuesta del paso 2."""
+    response = verificar_codigo(client, codigo)
+    if 'Código verificado'.encode() not in response.data:
+        return response
+    return crear_nueva(client, nueva, confirmar)
 
 
 def test_login_muestra_enlace_de_recuperacion(client):
@@ -197,9 +211,61 @@ def test_correo_se_envia_con_la_foto_incrustada(app, monkeypatch):
 
 def test_nueva_contrasena_debil_se_rechaza_sin_gastar_el_codigo(client, cuenta, correos):
     pedir_codigo(client, 'lulero')
-    response = verificar(client, correos[0]['codigo'], nueva='debil')
+    verificar_codigo(client, correos[0]['codigo'])
+    response = crear_nueva(client, nueva='debil')
     assert 'La contraseña debe'.encode() in response.data
     assert cuenta.check_password('vieja123')
     assert CodigoRecuperacion.query.one().intentos == 0
-    response = verificar(client, correos[0]['codigo'], nueva='Fuerte2026')
+    response = crear_nueva(client, nueva='Fuerte2026')
     assert 'Tu contraseña se cambió'.encode() in response.data
+
+
+def test_panel_del_codigo_solo_pide_el_codigo(client):
+    html = client.get('/login').data.decode()
+    panel_codigo = html[html.index('id="codigoPanel"'):html.index('id="nuevaPanel"')]
+    assert 'name="codigo"' in panel_codigo
+    assert 'nueva_password' not in panel_codigo
+
+
+def test_codigo_correcto_lleva_a_crear_la_contrasena(client, cuenta, correos):
+    pedir_codigo(client, 'lulero')
+    response = verificar_codigo(client, correos[0]['codigo'])
+    html = response.data.decode()
+    assert 'Código verificado' in html
+    assert 'id="nuevaPanel" class="form-panel form-panel-centered panel-visible"' in html
+    assert cuenta.check_password('vieja123')  # todavía no cambia nada
+
+
+def test_codigo_incorrecto_no_deja_pasar_a_la_contrasena(client, cuenta, correos):
+    pedir_codigo(client, 'lulero')
+    incorrecto = '000000' if correos[0]['codigo'] != '000000' else '111111'
+    response = verificar_codigo(client, incorrecto)
+    html = response.data.decode()
+    assert 'incorrecto o ya venció' in html
+    assert 'id="codigoPanel" class="form-panel form-panel-centered panel-visible"' in html
+
+
+def test_no_se_puede_cambiar_la_contrasena_sin_verificar_el_codigo(client, cuenta, correos):
+    pedir_codigo(client, 'lulero')
+    response = crear_nueva(client)  # se salta el paso del código
+    assert 'Tu verificación ya venció'.encode() in response.data
+    assert cuenta.check_password('vieja123')
+
+
+def test_la_verificacion_vence_con_el_codigo(client, cuenta, correos):
+    pedir_codigo(client, 'lulero')
+    verificar_codigo(client, correos[0]['codigo'])
+    registro = CodigoRecuperacion.query.one()
+    registro.expira = registro.creado - timedelta(minutes=1)
+    db.session.commit()
+    response = crear_nueva(client)
+    assert 'Tu verificación ya venció'.encode() in response.data
+    assert cuenta.check_password('vieja123')
+
+
+def test_codigo_se_escribe_en_seis_casillas(client):
+    html = client.get('/login').data.decode()
+    panel_codigo = html[html.index('id="codigoPanel"'):html.index('id="nuevaPanel"')]
+    assert panel_codigo.count('class="codigo-casilla"') == 6
+    assert 'type="hidden" name="codigo"' in panel_codigo
+    assert 'js/codigo-casillas.js' in html
