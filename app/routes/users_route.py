@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.users import User
 from app.utils.correo import correo_valido
+from app.utils.seguridad import errores_contrasena, mensaje_contrasena_invalida
 from app import db
 
 # NOTA: este blueprint alguna vez tuvo un sistema completo de gestión de
@@ -38,6 +39,11 @@ def add():
             return render_template('auth/login.html', show_register=True)
         if User.query.filter(db.func.lower(User.emailUser) == emailUser).first():
             flash("Ese correo ya está registrado en otra cuenta.", "danger")
+            return render_template('auth/login.html', show_register=True)
+
+        errores = errores_contrasena(passwordUser, nameUser)
+        if errores:
+            flash(mensaje_contrasena_invalida(errores), "danger")
             return render_template('auth/login.html', show_register=True)
 
         # Las cuentas que se crean desde "Crear Cuenta Nueva" quedan

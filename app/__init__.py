@@ -100,6 +100,10 @@ def create_app(config_extra=None):
                 ('isAdmin', 'BOOLEAN DEFAULT 0'),
                 ('activo', 'BOOLEAN DEFAULT 1'),
                 ('emailUser', 'VARCHAR(120)'),
+                # DEFAULT 1: todas las cuentas que ya existen quedan
+                # obligadas a cambiar su contraseña en el próximo inicio
+                # de sesión (se crearon antes de las reglas de seguridad).
+                ('debe_cambiar_password', 'BOOLEAN NOT NULL DEFAULT 1'),
             ])
             _asegurar_columnas('cultivos', [
                 ('idUser', 'INTEGER'),
@@ -110,7 +114,9 @@ def create_app(config_extra=None):
 
             admin = User.query.filter_by(nameUser='admin').first()
             if not admin:
-                admin = User(nameUser='admin', isAdmin=True, activo=True)
+                # La contraseña inicial es débil a propósito: queda marcada
+                # para que se cambie apenas se inicie sesión por primera vez.
+                admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
                 admin.set_password('123')
                 db.session.add(admin)
                 db.session.commit()
