@@ -152,6 +152,7 @@ def recuperar_contrasena():
         return render_template("auth/login.html", show_recover=True)
 
     session['recuperar_para'] = usuario_correo
+    session.pop('recuperar_codigo_ok', None)
     user = _buscar_cuenta(usuario_correo)
 
     if user and user.emailUser:
@@ -183,11 +184,12 @@ def recuperar_contrasena():
     return render_template("auth/login.html", show_codigo=True)
 
 
-@bp.route('/recuperar/verificar', methods=['POST'])
-def recuperar_verificar():
+@bp.route('/recuperar/codigo', methods=['POST'])
+def recuperar_codigo():
     """
-    Paso 2: recibe el código de 6 dígitos y la nueva contraseña. El código
-    vence, tiene un número limitado de intentos y se borra apenas se usa.
+    Paso 2: solo revisa el código de 6 dígitos. Si es correcto, deja a la
+    persona pasar al paso 3 (crear la nueva contraseña). El código vence,
+    tiene un número limitado de intentos y se borra cuando se usa.
     """
     usuario_correo = session.get('recuperar_para')
     if not usuario_correo:
@@ -195,16 +197,6 @@ def recuperar_verificar():
         return render_template("auth/login.html", show_recover=True)
 
     codigo = request.form.get('codigo', '').strip()
-    nueva_password = request.form.get('nueva_password', '')
-    confirmar_password = request.form.get('confirmar_password', '')
-
-    if not nueva_password:
-        flash('Escribe tu nueva contraseña.', 'danger')
-        return render_template("auth/login.html", show_codigo=True)
-    if nueva_password != confirmar_password:
-        flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
-        return render_template("auth/login.html", show_codigo=True)
-
     user = _buscar_cuenta(usuario_correo)
     registro = None
     if user:
@@ -220,16 +212,46 @@ def recuperar_verificar():
         flash('El código es incorrecto o ya venció. Revísalo o solicita uno nuevo.', 'danger')
         return render_template("auth/login.html", show_codigo=True)
 
+    # Código correcto: se recuerda cuál fue, para permitir el paso 3.
+    session['recuperar_codigo_ok'] = registro.idCodigo
+    flash('Código verificado. Ahora crea tu nueva contraseña.', 'success')
+    return render_template("auth/login.html", show_nueva=True)
+
+
+@bp.route('/recuperar/nueva', methods=['POST'])
+def recuperar_nueva():
+    """
+    Paso 3: crea la nueva contraseña. Solo se llega aquí después de haber
+    escrito bien el código (paso 2) y mientras ese código siga vigente.
+    """
+    id_codigo = session.get('recuperar_codigo_ok')
+    registro = CodigoRecuperacion.query.get(id_codigo) if id_codigo else None
+    if registro is None or registro.expira <= _ahora():
+        session.pop('recuperar_codigo_ok', None)
+        flash('Tu verificación ya venció. Solicita un código nuevo.', 'danger')
+        return render_template("auth/login.html", show_recover=True)
+
+    nueva_password = request.form.get('nueva_password', '')
+    confirmar_password = request.form.get('confirmar_password', '')
+    if not nueva_password:
+        flash('Escribe tu nueva contraseña.', 'danger')
+        return render_template("auth/login.html", show_nueva=True)
+    if nueva_password != confirmar_password:
+        flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
+        return render_template("auth/login.html", show_nueva=True)
+
+    user = User.query.get(registro.idUser)
     errores = errores_contrasena(nueva_password, user.nameUser)
     if errores:
-        # El código es correcto: no se gasta un intento, solo se pide una
-        # contraseña que cumpla las reglas.
+        # La verificación del código sigue valiendo: solo se pide una
+        # contraseña que cumpla las reglas de seguridad.
         flash(mensaje_contrasena_invalida(errores), 'danger')
-        return render_template("auth/login.html", show_codigo=True)
+        return render_template("auth/login.html", show_nueva=True)
 
     user.set_password(nueva_password)
     CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
     db.session.commit()
+    session.pop('recuperar_codigo_ok', None)
     session.pop('recuperar_para', None)
     flash('¡Listo! Tu contraseña se cambió. Ya puedes iniciar sesión con la nueva.', 'success')
     return redirect(url_for('auth.login'))
