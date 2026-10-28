@@ -1121,3 +1121,45 @@ body.theme-orange .ambient-neon-glow-2 {
     opacity: 0;
   }
 }
+
+/* Código de verificación en 6 casillas (static/js/codigo-casillas.js) */
+.codigo-casillas {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.codigo-casilla {
+  width: 50px;
+  height: 58px;
+  padding: 0;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--neon-green);
+  caret-color: var(--neon-green);
+  background: rgba(7, 9, 8, 0.85);
+  border: 1.5px solid var(--border-neon);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.codigo-casilla:focus {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 0 3px var(--neon-green-subtle), 0 0 16px var(--neon-green-glow);
+  transform: translateY(-2px);
+}
+.codigo-casilla.llena {
+  border-color: var(--neon-green);
+  background: rgba(57, 255, 20, 0.08);
+}
+.codigo-casillas-error {
+  margin-top: 10px;
+  text-align: center;
+  color: #ff4d4d;
+  font-size: 0.85rem;
+}
+@media (max-width: 400px) {
+  .codigo-casillas { gap: 6px; }
+  .codigo-casilla { width: 42px; height: 52px; font-size: 1.35rem; }
+}
