@@ -3,7 +3,7 @@ from tests.conftest import iniciar_sesion, crear_usuario
 
 
 def test_registro_crea_cuenta_activa(client):
-    response = client.post('/User/add', data={'nameUser': 'nuevo', 'passwordUser': 'clave123',
+    response = client.post('/User/add', data={'nameUser': 'nuevo', 'passwordUser': 'Lulo2026x',
                                               'emailUser': 'Nuevo@Ejemplo.com'},
                            follow_redirects=True)
     assert response.status_code == 200

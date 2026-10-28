@@ -140,16 +140,7 @@
       </span>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
-      <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
-      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+    {% include 'partials/notificaciones.html' %}
 
     <!-- Encabezado de la Página -->
     <div class="dash-card mb-4">
