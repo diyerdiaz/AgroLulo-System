@@ -8,8 +8,9 @@ def test_pagina_login_carga(client):
     assert 'Iniciar'.encode() in response.data
 
 
-def test_login_exitoso_redirige_al_dashboard(client, user):
-    response = client.post('/', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
+def test_login_exitoso_redirige_al_dashboard(client):
+    crear_usuario('segura', clave='Lulo2026x')
+    response = client.post('/', data={'nameUser': 'segura', 'passwordUser': 'Lulo2026x'})
     assert response.status_code == 302
     assert response.headers['Location'].endswith('/dashboard')
 
