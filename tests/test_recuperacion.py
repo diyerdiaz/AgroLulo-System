@@ -29,7 +29,7 @@ def pedir_codigo(client, usuario_o_correo):
     return client.post('/recuperar', data={'usuarioCorreo': usuario_o_correo})
 
 
-def verificar(client, codigo, nueva='nueva456', confirmar=None):
+def verificar(client, codigo, nueva='Nueva2026x', confirmar=None):
     return client.post('/recuperar/verificar', data={
         'codigo': codigo, 'nueva_password': nueva,
         'confirmar_password': nueva if confirmar is None else confirmar,
@@ -72,7 +72,7 @@ def test_codigo_correcto_cambia_la_contrasena(client, cuenta, correos):
     pedir_codigo(client, 'lulero')
     response = verificar(client, correos[0]['codigo'])
     assert 'Tu contraseña se cambió'.encode() in response.data
-    assert cuenta.check_password('nueva456')
+    assert cuenta.check_password('Nueva2026x')
     assert not cuenta.check_password('vieja123')
     assert CodigoRecuperacion.query.count() == 0  # se borra apenas se usa
 
@@ -81,8 +81,8 @@ def test_codigo_no_se_puede_reutilizar(client, cuenta, correos):
     pedir_codigo(client, 'lulero')
     codigo = correos[0]['codigo']
     verificar(client, codigo)
-    response = verificar(client, codigo, nueva='otra789')
-    assert cuenta.check_password('nueva456')
+    response = verificar(client, codigo, nueva='Otra2026x')
+    assert cuenta.check_password('Nueva2026x')
     assert 'Primero solicita un código'.encode() in response.data
 
 
@@ -193,3 +193,13 @@ def test_correo_se_envia_con_la_foto_incrustada(app, monkeypatch):
     assert '123456' in mensaje['Subject']
     tipos = [parte.get_content_type() for parte in mensaje.walk()]
     assert 'text/plain' in tipos and 'text/html' in tipos and 'image/jpeg' in tipos
+
+
+def test_nueva_contrasena_debil_se_rechaza_sin_gastar_el_codigo(client, cuenta, correos):
+    pedir_codigo(client, 'lulero')
+    response = verificar(client, correos[0]['codigo'], nueva='debil')
+    assert 'La contraseña debe'.encode() in response.data
+    assert cuenta.check_password('vieja123')
+    assert CodigoRecuperacion.query.one().intentos == 0
+    response = verificar(client, correos[0]['codigo'], nueva='Fuerte2026')
+    assert 'Tu contraseña se cambió'.encode() in response.data

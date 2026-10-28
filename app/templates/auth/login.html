@@ -14,16 +14,7 @@
 
 <div class="container py-4">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-  {% for category, message in messages %}
-  <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
-    <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-  {% endfor %}
-  {% endif %}
-  {% endwith %}
+  {% include 'partials/notificaciones.html' %}
 
   <div class="login-volver">
     <a href="{{ url_for('landing.index') }}" class="btn btn-neon-outline btn-sm px-3">
@@ -143,6 +134,13 @@
                   <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
                   <input type="password" name="passwordUser" id="regPasswordUser" class="form-control" placeholder="Crea tu contraseña" required autocomplete="new-password">
                 </div>
+                <ul class="reglas-contrasena list-unstyled mb-1" id="regReglas">
+                  <li data-regla="largo"><i class="bi bi-circle"></i> Mínimo 8 caracteres</li>
+                  <li data-regla="mayuscula"><i class="bi bi-circle"></i> Una letra mayúscula</li>
+                  <li data-regla="minuscula"><i class="bi bi-circle"></i> Una letra minúscula</li>
+                  <li data-regla="numero"><i class="bi bi-circle"></i> Un número</li>
+                  <li data-regla="usuario"><i class="bi bi-circle"></i> Que no contenga tu usuario</li>
+                </ul>
               </div>
 
               <div class="mb-3">
@@ -246,6 +244,13 @@
                   <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
                   <input type="password" name="nueva_password" id="nuevaPassword" class="form-control" placeholder="Crea tu nueva contraseña" required autocomplete="new-password">
                 </div>
+                <ul class="reglas-contrasena list-unstyled mb-1" id="nuevaReglas">
+                  <li data-regla="largo"><i class="bi bi-circle"></i> Mínimo 8 caracteres</li>
+                  <li data-regla="mayuscula"><i class="bi bi-circle"></i> Una letra mayúscula</li>
+                  <li data-regla="minuscula"><i class="bi bi-circle"></i> Una letra minúscula</li>
+                  <li data-regla="numero"><i class="bi bi-circle"></i> Un número</li>
+                  <li data-regla="usuario"><i class="bi bi-circle"></i> Que no contenga tu usuario</li>
+                </ul>
               </div>
 
               <div class="mb-3">
@@ -313,6 +318,9 @@
   </div>
 </div>
 
+<!-- Reglas de contraseña (mismas que valida el servidor) -->
+<script src="{{ url_for('static', filename='js/reglas-contrasena.js') }}"></script>
+
 <!-- Script para Cambio de Formularios y Validación -->
 <script>
   function switchForm(targetMode) {
@@ -333,11 +341,25 @@
     }
   }
 
+  const regPass = document.getElementById('regPasswordUser');
+  const regUser = document.getElementById('regNameUser');
+  const actualizarReg = () => pintarReglas('regReglas', regPass.value, regUser.value);
+  regPass.addEventListener('input', actualizarReg);
+  regUser.addEventListener('input', actualizarReg);
+  const nuevaPass = document.getElementById('nuevaPassword');
+  nuevaPass.addEventListener('input', () => pintarReglas('nuevaReglas', nuevaPass.value, ''));
+
   function validateRegister(event) {
     const password = document.getElementById('regPasswordUser').value;
     const confirm = document.getElementById('confirmPassword').value;
     const errorBox = document.getElementById('registerError');
 
+    if (!pintarReglas('regReglas', password, regUser.value)) {
+      event.preventDefault();
+      errorBox.textContent = 'Tu contraseña aún no cumple todas las reglas de seguridad.';
+      errorBox.classList.remove('d-none');
+      return false;
+    }
     if (password !== confirm) {
       event.preventDefault();
       errorBox.textContent = 'Las contraseñas no coinciden. Por favor verifícalas.';
@@ -353,6 +375,12 @@
     const confirm = document.getElementById('confirmarNuevaPassword').value;
     const errorBox = document.getElementById('codigoError');
 
+    if (!pintarReglas('nuevaReglas', password, '')) {
+      event.preventDefault();
+      errorBox.textContent = 'Tu nueva contraseña aún no cumple todas las reglas de seguridad.';
+      errorBox.classList.remove('d-none');
+      return false;
+    }
     if (password !== confirm) {
       event.preventDefault();
       errorBox.textContent = 'Las contraseñas no coinciden. Por favor verifícalas.';
