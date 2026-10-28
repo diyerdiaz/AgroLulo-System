@@ -3,19 +3,19 @@ from tests.conftest import crear_usuario
 
 
 def test_pagina_login_carga(client):
-    response = client.get('/')
+    response = client.get('/login')
     assert response.status_code == 200
     assert 'Iniciar'.encode() in response.data
 
 
 def test_login_exitoso_redirige_al_dashboard(client, user):
-    response = client.post('/', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
+    response = client.post('/login', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
     assert response.status_code == 302
     assert response.headers['Location'].endswith('/dashboard')
 
 
 def test_login_credenciales_invalidas(client, user):
-    response = client.post('/', data={'nameUser': 'test_user', 'passwordUser': 'otra'},
+    response = client.post('/login', data={'nameUser': 'test_user', 'passwordUser': 'otra'},
                            follow_redirects=True)
     assert response.status_code == 200
     assert 'Credenciales inválidas'.encode() in response.data
@@ -23,15 +23,15 @@ def test_login_credenciales_invalidas(client, user):
 
 def test_cuenta_bloqueada_no_puede_entrar(client):
     crear_usuario('bloqueado', activo=False)
-    response = client.post('/', data={'nameUser': 'bloqueado', 'passwordUser': 'clave123'},
+    response = client.post('/login', data={'nameUser': 'bloqueado', 'passwordUser': 'clave123'},
                            follow_redirects=True)
     assert 'esperando a que el administrador la active'.encode() in response.data
 
 
 def test_bloqueo_tras_muchos_intentos_fallidos(client, user):
     for _ in range(5):
-        client.post('/', data={'nameUser': 'test_user', 'passwordUser': 'mal'})
-    response = client.post('/', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
+        client.post('/login', data={'nameUser': 'test_user', 'passwordUser': 'mal'})
+    response = client.post('/login', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
     assert 'Demasiados intentos fallidos'.encode() in response.data
 
 

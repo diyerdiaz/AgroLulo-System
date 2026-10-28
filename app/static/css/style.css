@@ -1121,3 +1121,313 @@ body.theme-orange .ambient-neon-glow-2 {
     opacity: 0;
   }
 }
+
+/* ===== Landing page (templates/landing/index.html) ===== */
+.landing-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  padding: 14px 0;
+  background: rgba(7, 9, 8, 0.78);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-neon);
+}
+.landing-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.15rem;
+  text-decoration: none;
+}
+.landing-marca:hover { color: #ffffff; }
+.landing-marca-texto { color: #ffffff; }
+.landing-marca-texto, .landing-nav .btn { white-space: nowrap; }
+.landing-nav .btn { padding-top: 0.45rem; padding-bottom: 0.45rem; font-size: 0.82rem; }
+@media (max-width: 575.98px) { .landing-marca-texto { font-size: 1rem; } }
+.landing-marca-texto span { color: var(--neon-green); }
+.landing-logo.brand-logo-badge { width: 38px; height: 38px; margin: 0 !important; }
+.landing-logo .brand-logo-icon { width: 22px; height: 22px; }
+.landing-nav-links { gap: 28px; }
+.landing-nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: color 0.2s ease;
+}
+.landing-nav-links a:hover { color: var(--neon-green); }
+
+.landing-hero { position: relative; z-index: 1; padding: 72px 0 64px; }
+.landing-titulo {
+  font-size: clamp(2.1rem, 5vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: #ffffff;
+  margin: 0 0 18px;
+}
+.landing-titulo span,
+.landing-encabezado h2 span,
+.landing-cta h2 span { color: var(--neon-green); text-shadow: 0 0 22px var(--neon-green-glow); }
+.landing-texto { color: var(--text-muted); font-size: 1.08rem; line-height: 1.7; max-width: 560px; }
+.landing-mini-datos { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 28px; }
+.landing-mini-datos div { color: var(--text-muted); font-size: 0.88rem; }
+.landing-mini-datos i { color: var(--neon-green); margin-right: 6px; }
+
+.landing-hero-imagen { position: relative; max-width: 460px; margin: 0 auto; }
+.landing-hero-imagen img {
+  width: 100%;
+  border-radius: 24px;
+  border: 1px solid var(--border-neon);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 40px var(--neon-green-subtle);
+  display: block;
+}
+.landing-tarjeta-flotante {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(13, 24, 17, 0.92);
+  border: 1px solid var(--border-neon);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  animation: landing-flotar 5s ease-in-out infinite;
+}
+.landing-tarjeta-flotante i { font-size: 1.3rem; color: var(--neon-green); }
+.landing-tarjeta-flotante small { display: block; color: var(--text-muted); font-size: 0.72rem; }
+.landing-tarjeta-flotante strong { color: #ffffff; font-size: 0.88rem; }
+.landing-tarjeta-1 { top: 12%; left: -34px; }
+.landing-tarjeta-2 { bottom: 14%; right: -30px; animation-delay: -2.5s; }
+.landing-tarjeta-2 i { color: var(--gold-accent); }
+@keyframes landing-flotar { 50% { transform: translateY(-10px); } }
+
+.landing-seccion { position: relative; z-index: 1; padding: 80px 0; }
+/* Al saltar desde el menú, la sección no queda tapada por la barra fija */
+.landing-seccion { scroll-margin-top: 72px; }
+.landing-seccion-alterna { background: linear-gradient(180deg, transparent, rgba(57, 255, 20, 0.035), transparent); }
+.landing-encabezado { text-align: center; max-width: 720px; margin: 0 auto 48px; }
+.landing-etiqueta {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid var(--border-neon);
+  border-radius: 999px;
+  color: var(--neon-green);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.landing-encabezado h2,
+.landing-cta h2 { color: #ffffff; font-weight: 800; font-size: clamp(1.7rem, 3.5vw, 2.4rem); margin-bottom: 14px; }
+.landing-encabezado p { color: var(--text-muted); font-size: 1.02rem; line-height: 1.7; }
+
+.landing-tarjeta {
+  height: 100%;
+  padding: 26px;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 1px solid rgba(57, 255, 20, 0.14);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.landing-tarjeta:hover {
+  transform: translateY(-6px);
+  border-color: var(--border-neon);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4), 0 0 24px var(--neon-green-subtle);
+}
+.landing-tarjeta h3, .landing-paso h3 { color: #ffffff; font-size: 1.08rem; font-weight: 700; margin: 16px 0 8px; }
+.landing-tarjeta p, .landing-paso p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; margin: 0; }
+.landing-icono {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  color: var(--neon-green);
+  background: var(--neon-green-subtle);
+  border: 1px solid var(--border-neon);
+}
+
+.landing-paso { text-align: center; padding: 10px 8px; }
+.landing-paso-numero {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #07100a;
+  background: var(--neon-green);
+  box-shadow: 0 0 24px var(--neon-green-glow);
+}
+
+.landing-cta {
+  padding: 56px 48px;
+  border-radius: 24px;
+  border: 1px solid var(--border-neon);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+.landing-cta p { color: var(--text-muted); font-size: 1.05rem; max-width: 460px; margin-bottom: 26px; }
+
+.landing-pie {
+  position: relative;
+  z-index: 1;
+  padding: 26px 0 calc(26px + var(--footer-h));
+  border-top: 1px solid rgba(57, 255, 20, 0.12);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.landing-pie strong { color: #ffffff; }
+.landing-pie strong span { color: var(--neon-green); }
+
+@media (max-width: 991.98px) {
+  .landing-hero { padding: 48px 0 40px; text-align: center; }
+  .landing-hero .d-flex, .landing-mini-datos { justify-content: center; }
+  .landing-texto { margin: 0 auto; }
+  .landing-tarjeta-1 { left: -8px; }
+  .landing-tarjeta-2 { right: -8px; }
+}
+@media (max-width: 575.98px) {
+  .landing-seccion { padding: 56px 0; }
+  .landing-cta { padding: 36px 24px; text-align: center; }
+  .landing-cta .d-flex { justify-content: center; }
+  .landing-tarjeta-flotante { padding: 9px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-tarjeta-flotante { animation: none; }
+}
+
+/* ===== Animaciones de la landing (static/js/landing.js) ===== */
+
+/* 1. Cursor del efecto de escritura del título */
+.cursor-escritura {
+  display: inline-block;
+  width: 0.07em;
+  height: 0.95em;
+  margin-left: 0.08em;
+  vertical-align: -0.1em;
+  background: var(--neon-green);
+  box-shadow: 0 0 12px var(--neon-green-glow);
+  animation: cursor-parpadeo 0.85s step-end infinite;
+}
+@keyframes cursor-parpadeo { 50% { opacity: 0; } }
+
+/* 2. Aparición al bajar (solo si hay JavaScript; sin JS todo se ve normal) */
+.js-animaciones .revelar {
+  opacity: 0;
+  transform: translateY(36px) scale(0.98);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: var(--retraso, 0ms);
+}
+.js-animaciones .revelar.visible { opacity: 1; transform: none; }
+
+/* 3. Pasos con flechas */
+.landing-pasos { display: flex; align-items: flex-start; }
+.landing-pasos .landing-paso { flex: 1 1 0; min-width: 0; }
+.landing-flecha {
+  flex: 0 0 72px;
+  position: relative;
+  height: 58px;
+  display: flex;
+  align-items: center;
+}
+.landing-flecha-linea {
+  height: 3px;
+  width: calc(100% - 10px);
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, var(--neon-green) 0 10px, transparent 10px 16px);
+  background-size: 32px 100%;
+  box-shadow: 0 0 10px var(--neon-green-glow);
+  animation: flecha-flujo 0.9s linear infinite;
+}
+.landing-flecha i {
+  position: absolute;
+  right: -2px;
+  color: var(--neon-green);
+  font-size: 1.15rem;
+  text-shadow: 0 0 10px var(--neon-green-glow);
+}
+@keyframes flecha-flujo { to { background-position: 32px 0; } }
+
+.js-animaciones .landing-pasos .landing-paso {
+  opacity: 0.25;
+  transform: translateY(18px) scale(0.94);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.js-animaciones .landing-pasos .landing-paso.activo { opacity: 1; transform: none; }
+.js-animaciones .landing-paso.activo .landing-paso-numero { animation: paso-encendido 0.7s ease; }
+@keyframes paso-encendido {
+  0% { transform: scale(0.6); box-shadow: 0 0 0 0 var(--neon-green-glow); }
+  60% { transform: scale(1.15); box-shadow: 0 0 0 14px rgba(57, 255, 20, 0); }
+  100% { transform: scale(1); }
+}
+.js-animaciones .landing-flecha .landing-flecha-linea { width: 0; transition: width 0.45s ease; }
+.js-animaciones .landing-flecha i { opacity: 0; transform: translateX(-12px); transition: opacity 0.3s ease 0.3s, transform 0.3s ease 0.3s; }
+.js-animaciones .landing-flecha.activo .landing-flecha-linea { width: calc(100% - 10px); }
+.js-animaciones .landing-flecha.activo i { opacity: 1; transform: none; }
+
+@media (max-width: 991.98px) {
+  .landing-pasos { flex-direction: column; align-items: center; }
+  .landing-pasos .landing-paso { flex: none; width: 100%; max-width: 340px; }
+  .landing-flecha { flex: none; width: 64px; height: 44px; transform: rotate(90deg); margin: 2px 0; }
+}
+
+/* 4. Tarjeta final en movimiento: flota y su ilustración se desplaza */
+.landing-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.landing-cta::before {
+  content: '';
+  position: absolute;
+  inset: -8%;
+  z-index: -2;
+  background: var(--cta-fondo) center / cover no-repeat;
+  animation: cta-fondo-mover 16s ease-in-out infinite alternate;
+}
+.landing-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(7, 9, 8, 0.94) 0%, rgba(7, 9, 8, 0.75) 55%, rgba(7, 9, 8, 0.35) 100%);
+}
+html:not(.js-animaciones) .landing-cta,
+.landing-cta.visible { animation: cta-flotar 6s ease-in-out 0.8s infinite; }
+@keyframes cta-fondo-mover {
+  from { transform: scale(1) translateX(0); }
+  to   { transform: scale(1.12) translateX(-4%); }
+}
+@keyframes cta-flotar {
+  0%, 100% { translate: 0 0; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 0 rgba(57, 255, 20, 0); }
+  50%      { translate: 0 -10px; box-shadow: 0 40px 70px rgba(0, 0, 0, 0.55), 0 0 34px var(--neon-green-subtle); }
+}
+@media (max-width: 575.98px) {
+  .landing-cta::after { background: linear-gradient(180deg, rgba(7, 9, 8, 0.9), rgba(7, 9, 8, 0.75)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-escritura, .landing-flecha-linea, .landing-cta, .landing-cta::before { animation: none !important; }
+}
+
+/* Botón "Volver al inicio" del login (lleva a la landing page) */
+.login-volver { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto 14px; }
+.login-volver .btn { white-space: nowrap; }
+
+/* Login en celular: las 3 características del panel derecho bajan de línea
+   si no caben (antes "Balance Financiero" quedaba cortado). */
+@media (max-width: 575.98px) {
+  .lulo-features { flex-wrap: wrap; gap: 12px 20px; }
+}
