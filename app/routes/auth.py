@@ -74,7 +74,8 @@ MESES_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'
 PALETA_CULTIVOS = ['#39ff14', '#4cc9f0', '#ffb703', '#b5179e', '#ff4d4d', '#06d6a0', '#8338ec', '#f72585']
 
 
-@bp.route('/', methods=['GET', 'POST'])
+# La raíz (/) es la landing page (routes/landing_route.py); el login vive en /login.
+@bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         ip = _ip_solicitante()
