@@ -16,3 +16,6 @@ instance/
 
 # Instrucciones locales para Claude Code (no se suben a GitHub).
 CLAUDE.md
+
+# Archivos que suben los usuarios (fotos de análisis): no van en git.
+app/static/uploads/
