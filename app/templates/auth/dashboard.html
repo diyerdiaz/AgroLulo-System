@@ -19,7 +19,7 @@
     
     <!-- Botón Principal de Menú (☰) -->
     <div class="mb-2">
-      <button type="button" class="btn-toggle-menu" onclick="toggleSidebar()" aria-label="Alternar Menú">
+      <button type="button" class="btn-toggle-menu" onclick="toggleSidebar()" aria-label="Alternar Menú" data-tour="menu">
         <i class="bi bi-list"></i>
         <span class="sidebar-nav-content fw-bold text-white fs-6">Menú</span>
       </button>
@@ -49,7 +49,7 @@
           </a>
         </li>
         <li>
-          <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
+          <a href="{{ url_for('cultivos.index') }}" class="sidebar-link" data-tour="cultivos">
             <div class="nav-icon-box">
               <i class="bi bi-tree-fill"></i>
             </div>
@@ -57,7 +57,7 @@
           </a>
         </li>
         <li>
-          <a href="{{ url_for('calendario.index') }}" class="sidebar-link">
+          <a href="{{ url_for('calendario.index') }}" class="sidebar-link" data-tour="calendario">
             <div class="nav-icon-box" style="color: #8338ec; border-color: rgba(131, 56, 236, 0.3);">
               <i class="bi bi-calendar3-fill"></i>
             </div>
@@ -65,7 +65,7 @@
           </a>
         </li>
         <li>
-          <a href="{{ url_for('ingresos.index') }}" class="sidebar-link">
+          <a href="{{ url_for('ingresos.index') }}" class="sidebar-link" data-tour="ingresos">
             <div class="nav-icon-box">
               <i class="bi bi-cash-stack"></i>
             </div>
@@ -73,7 +73,7 @@
           </a>
         </li>
         <li>
-          <a href="{{ url_for('gastos.index') }}" class="sidebar-link">
+          <a href="{{ url_for('gastos.index') }}" class="sidebar-link" data-tour="gastos">
             <div class="nav-icon-box" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);">
               <i class="bi bi-dash-circle-fill"></i>
             </div>
@@ -81,7 +81,7 @@
           </a>
         </li>
         <li>
-          <a href="{{ url_for('pagos.index') }}" class="sidebar-link">
+          <a href="{{ url_for('pagos.index') }}" class="sidebar-link" data-tour="pagos">
             <div class="nav-icon-box" style="color: #06d6a0; border-color: rgba(6, 214, 160, 0.3);">
               <i class="bi bi-patch-check-fill"></i>
             </div>
@@ -110,7 +110,7 @@
 
       <!-- Usuario & Logout en la parte inferior -->
       <div class="pt-3 border-top border-secondary border-opacity-25 text-center">
-        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña">
+        <a href="{{ url_for('auth.editar_perfil') }}" class="d-flex align-items-center justify-content-center gap-2 mb-2 px-2 py-1.5 rounded-pill text-decoration-none" style="background: rgba(57, 255, 20, 0.08); border: 1px solid var(--border-neon); cursor: pointer;" title="Cambiar usuario y contraseña" data-tour="perfil">
           <i class="bi bi-person-circle fs-5" style="color: var(--neon-green);"></i>
           <span class="fw-bold text-light text-truncate" style="font-size: 0.88rem; max-width: 140px;">{{ current_user.nameUser }}</span>
         </a>
@@ -130,7 +130,7 @@
     <!-- Encabezado Móvil para Pantallas Pequeñas -->
     <div class="mobile-nav-header">
       <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()" data-tour="menu">
           <i class="bi bi-list fs-4"></i>
         </button>
         <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">System</span></span>
@@ -171,7 +171,7 @@
       </h5>
     </div>
 
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4" data-tour="resumen">
       
       <!-- 1. Total de cultivos -->
       <div class="col-lg-4 col-md-6">
@@ -602,4 +602,7 @@
 
 <!-- Script de Animaciones de Fondo -->
 <script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+
+<!-- Don Pancho Lulero: guía para usuarios nuevos y botón de ayuda -->
+{% include 'partials/don_pancho.html' %}
 {% endblock %}

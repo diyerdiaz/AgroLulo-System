@@ -1571,3 +1571,188 @@ html:not(.js-animaciones) .landing-cta,
   .codigo-casillas { gap: 6px; }
   .codigo-casilla { width: 42px; height: 52px; font-size: 1.35rem; }
 }
+
+/* ================================================================
+   Don Pancho Lulero: guía para usuarios nuevos (partials/don_pancho.html
+   + static/js/don-pancho.js). Va por encima de todo, incluido el menú
+   lateral en celular (z-index 1050).
+   ================================================================ */
+.don-pancho[hidden] { display: none; }
+
+/* Capa invisible que evita clics en la página mientras Don Pancho habla.
+   Cuando no está señalando nada, oscurece toda la pantalla. */
+.don-pancho-bloqueo {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: transparent;
+}
+.don-pancho.sin-foco .don-pancho-bloqueo { background: rgba(0, 0, 0, 0.72); }
+
+/* Recuadro que resalta lo que Don Pancho está explicando: todo lo demás
+   queda oscuro gracias a la sombra gigante. */
+.don-pancho-foco {
+  position: fixed;
+  z-index: 3001;
+  border-radius: 14px;
+  border: 2px solid var(--neon-green);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72), 0 0 22px var(--neon-green-glow);
+  pointer-events: none;
+  transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+
+.don-pancho-globo {
+  position: fixed;
+  z-index: 3002;
+  width: 440px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  padding: 14px;
+  background: rgba(8, 12, 10, 0.97);
+  border: 1px solid var(--border-neon);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.9), 0 0 25px var(--neon-green-glow);
+  color: var(--text-light);
+  white-space: normal;
+}
+.don-pancho-globo.centrado {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+}
+.don-pancho-globo.entrando { animation: donPanchoEntra 0.3s ease-out; }
+
+@keyframes donPanchoEntra {
+  from { opacity: 0; scale: 0.94; }
+  to   { opacity: 1; scale: 1; }
+}
+
+.don-pancho-img {
+  width: 112px;
+  height: auto;
+  align-self: center;
+  flex-shrink: 0;
+  border-radius: 14px;
+  border: 1px solid var(--border-neon);
+  object-fit: cover;
+  aspect-ratio: 303 / 508;
+}
+.don-pancho-globo.centrado .don-pancho-img { width: 150px; }
+
+.don-pancho-cuerpo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.don-pancho-nombre {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--gold-accent);
+}
+.don-pancho-titulo {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--neon-green);
+  margin: 2px 0 6px;
+}
+.don-pancho-texto {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  margin: 0 0 12px;
+  flex: 1;
+}
+.don-pancho-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.don-pancho-progreso {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.don-pancho-botones {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+}
+/* Los botones neón de la app son grandes; aquí van compactos para que los
+   tres quepan en una sola fila dentro del globo. */
+.don-pancho-botones .btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  width: auto;
+}
+/* Bootstrap le quita el fondo a un botón cuando tiene el foco del teclado;
+   "Siguiente" arranca con el foco, así que se le devuelve su verde. */
+.don-pancho-botones .btn-neon-primary:focus,
+.don-pancho-botones .btn-neon-primary:focus-visible,
+.don-pancho-botones .btn-neon-primary:active {
+  background: var(--neon-green);
+  color: #000;
+  border-color: transparent;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 20px var(--neon-green-glow);
+}
+.don-pancho-saltar {
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+.don-pancho-saltar:hover { color: var(--text-light); }
+
+/* Botón con la cara de Don Pancho: queda encima del botón del rayo. */
+.don-pancho-ayuda {
+  position: fixed;
+  bottom: calc(var(--footer-h) + 16px + 48px + 12px);
+  right: 22px;
+  z-index: 1000;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--neon-green);
+  background: #fff;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.85), 0 0 15px var(--neon-green-glow);
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+.don-pancho-ayuda img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.don-pancho-ayuda:hover,
+.don-pancho-ayuda:focus-visible { transform: scale(1.1) rotate(-6deg); }
+
+/* En celular, el globo va abajo a lo ancho para no tapar lo que señala. */
+@media (max-width: 767.98px) {
+  .don-pancho-globo,
+  .don-pancho-globo.centrado {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: calc(var(--footer-h) + 12px);
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding: 12px;
+    gap: 10px;
+  }
+  .don-pancho-img,
+  .don-pancho-globo.centrado .don-pancho-img { width: 64px; align-self: flex-start; }
+  .don-pancho-botones { width: 100%; justify-content: flex-end; }
+  .don-pancho-botones .btn { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+  .don-pancho-titulo { font-size: 1.02rem; }
+  .don-pancho-texto { font-size: 0.9rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .don-pancho-globo.entrando { animation: none; }
+  .don-pancho-foco { transition: none; }
+}
