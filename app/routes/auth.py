@@ -8,6 +8,7 @@ from app.models.actividad import ActividadCultivo
 from app.models.codigo_recuperacion import CodigoRecuperacion
 from app.utils.helpers import formato_moneda
 from app.utils.correo import correo_valido, enviar_codigo_recuperacion
+from app.utils.seguridad import errores_contrasena, mensaje_contrasena_invalida
 from app import db
 from datetime import date, datetime, timedelta, timezone
 from time import time
@@ -99,7 +100,14 @@ def login():
                 return redirect(url_for('auth.login'))
 
             _limpiar_intentos(ip)
+            # Si la contraseña con la que entró no cumple las reglas de
+            # seguridad actuales, también se le obliga a cambiarla.
+            if errores_contrasena(passwordUser, user.nameUser) and not user.debe_cambiar_password:
+                user.debe_cambiar_password = True
+                db.session.commit()
             login_user(user)
+            if user.debe_cambiar_password:
+                return redirect(url_for('auth.cambiar_contrasena'))
             flash(f"¡Bienvenido de nuevo, {user.nameUser}! Acceso concedido.", "success")
             return redirect(url_for('auth.dashboard'))
 
@@ -144,6 +152,7 @@ def recuperar_contrasena():
         return render_template("auth/login.html", show_recover=True)
 
     session['recuperar_para'] = usuario_correo
+    session.pop('recuperar_codigo_ok', None)
     user = _buscar_cuenta(usuario_correo)
 
     if user and user.emailUser:
@@ -175,11 +184,12 @@ def recuperar_contrasena():
     return render_template("auth/login.html", show_codigo=True)
 
 
-@bp.route('/recuperar/verificar', methods=['POST'])
-def recuperar_verificar():
+@bp.route('/recuperar/codigo', methods=['POST'])
+def recuperar_codigo():
     """
-    Paso 2: recibe el código de 6 dígitos y la nueva contraseña. El código
-    vence, tiene un número limitado de intentos y se borra apenas se usa.
+    Paso 2: solo revisa el código de 6 dígitos. Si es correcto, deja a la
+    persona pasar al paso 3 (crear la nueva contraseña). El código vence,
+    tiene un número limitado de intentos y se borra cuando se usa.
     """
     usuario_correo = session.get('recuperar_para')
     if not usuario_correo:
@@ -187,16 +197,6 @@ def recuperar_verificar():
         return render_template("auth/login.html", show_recover=True)
 
     codigo = request.form.get('codigo', '').strip()
-    nueva_password = request.form.get('nueva_password', '')
-    confirmar_password = request.form.get('confirmar_password', '')
-
-    if not nueva_password:
-        flash('Escribe tu nueva contraseña.', 'danger')
-        return render_template("auth/login.html", show_codigo=True)
-    if nueva_password != confirmar_password:
-        flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
-        return render_template("auth/login.html", show_codigo=True)
-
     user = _buscar_cuenta(usuario_correo)
     registro = None
     if user:
@@ -212,12 +212,111 @@ def recuperar_verificar():
         flash('El código es incorrecto o ya venció. Revísalo o solicita uno nuevo.', 'danger')
         return render_template("auth/login.html", show_codigo=True)
 
+    # Código correcto: se recuerda cuál fue, para permitir el paso 3.
+    session['recuperar_codigo_ok'] = registro.idCodigo
+    flash('Código verificado. Ahora crea tu nueva contraseña.', 'success')
+    return render_template("auth/login.html", show_nueva=True)
+
+
+@bp.route('/recuperar/nueva', methods=['POST'])
+def recuperar_nueva():
+    """
+    Paso 3: crea la nueva contraseña. Solo se llega aquí después de haber
+    escrito bien el código (paso 2) y mientras ese código siga vigente.
+    """
+    id_codigo = session.get('recuperar_codigo_ok')
+    registro = CodigoRecuperacion.query.get(id_codigo) if id_codigo else None
+    if registro is None or registro.expira <= _ahora():
+        session.pop('recuperar_codigo_ok', None)
+        flash('Tu verificación ya venció. Solicita un código nuevo.', 'danger')
+        return render_template("auth/login.html", show_recover=True)
+
+    nueva_password = request.form.get('nueva_password', '')
+    confirmar_password = request.form.get('confirmar_password', '')
+    if not nueva_password:
+        flash('Escribe tu nueva contraseña.', 'danger')
+        return render_template("auth/login.html", show_nueva=True)
+    if nueva_password != confirmar_password:
+        flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
+        return render_template("auth/login.html", show_nueva=True)
+
+    user = User.query.get(registro.idUser)
+    errores = errores_contrasena(nueva_password, user.nameUser)
+    if errores:
+        # La verificación del código sigue valiendo: solo se pide una
+        # contraseña que cumpla las reglas de seguridad.
+        flash(mensaje_contrasena_invalida(errores), 'danger')
+        return render_template("auth/login.html", show_nueva=True)
+
     user.set_password(nueva_password)
     CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
     db.session.commit()
+    session.pop('recuperar_codigo_ok', None)
     session.pop('recuperar_para', None)
     flash('¡Listo! Tu contraseña se cambió. Ya puedes iniciar sesión con la nueva.', 'success')
     return redirect(url_for('auth.login'))
+
+# Páginas a las que sí se puede entrar mientras la cuenta está obligada a
+# cambiar su contraseña (todo lo demás redirige a la pantalla de cambio).
+_PERMITIDAS_SIN_CAMBIAR = {'auth.cambiar_contrasena', 'auth.logout', 'static'}
+
+
+@bp.before_app_request
+def exigir_cambio_de_contrasena():
+    """Si la cuenta que inició sesión debe cambiar su contraseña, no la deja
+    usar ninguna otra página hasta que lo haga."""
+    if (current_user.is_authenticated and current_user.debe_cambiar_password
+            and request.endpoint not in _PERMITIDAS_SIN_CAMBIAR):
+        return redirect(url_for('auth.cambiar_contrasena'))
+
+
+@bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
+@login_required
+def cambiar_contrasena():
+    """
+    Pantalla obligatoria para las cuentas creadas antes de las reglas de
+    seguridad: crean una contraseña nueva que cumpla las reglas y, si la
+    cuenta no tiene correo, lo registran (para poder recuperarla después).
+    """
+    if not current_user.debe_cambiar_password:
+        return redirect(url_for('auth.dashboard'))
+
+    if request.method == 'POST':
+        nueva_password = request.form.get('nueva_password', '')
+        confirmar_password = request.form.get('confirmar_password', '')
+        correo = request.form.get('emailUser', '').strip().lower()
+
+        if nueva_password != confirmar_password:
+            flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
+            return render_template('auth/cambiar_contrasena.html')
+        errores = errores_contrasena(nueva_password, current_user.nameUser)
+        if errores:
+            flash(mensaje_contrasena_invalida(errores), 'danger')
+            return render_template('auth/cambiar_contrasena.html')
+        if current_user.check_password(nueva_password):
+            flash('La nueva contraseña debe ser distinta a la anterior.', 'danger')
+            return render_template('auth/cambiar_contrasena.html')
+
+        if not current_user.emailUser:
+            if not correo_valido(correo):
+                flash('Escribe un correo electrónico válido. Lo necesitarás si olvidas tu contraseña.', 'danger')
+                return render_template('auth/cambiar_contrasena.html')
+            correo_en_uso = User.query.filter(
+                db.func.lower(User.emailUser) == correo, User.idUser != current_user.idUser
+            ).first()
+            if correo_en_uso:
+                flash('Ese correo ya está registrado en otra cuenta.', 'danger')
+                return render_template('auth/cambiar_contrasena.html')
+            current_user.emailUser = correo
+
+        current_user.set_password(nueva_password)
+        current_user.debe_cambiar_password = False
+        db.session.commit()
+        flash('¡Listo! Tu contraseña se actualizó. Ya puedes usar AgroLulo con normalidad.', 'success')
+        return redirect(url_for('auth.dashboard'))
+
+    return render_template('auth/cambiar_contrasena.html')
+
 
 @bp.route('/dashboard')
 @login_required
@@ -411,6 +510,10 @@ def editar_perfil():
             if nueva_password != confirmar_password:
                 flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
                 return redirect(url_for('auth.editar_perfil'))
+            errores = errores_contrasena(nueva_password, nuevo_nombre)
+            if errores:
+                flash(mensaje_contrasena_invalida(errores), 'danger')
+                return redirect(url_for('auth.editar_perfil'))
             current_user.set_password(nueva_password)
 
         current_user.nameUser = nuevo_nombre
@@ -459,6 +562,7 @@ def usuario_crear():
 
     nameUser = request.form.get('nameUser', '').strip()
     passwordUser = request.form.get('passwordUser', '')
+    emailUser = request.form.get('emailUser', '').strip().lower()
 
     if not nameUser or not passwordUser:
         flash('Debes escribir un nombre de usuario y una contraseña para crear la cuenta.', 'danger')
@@ -469,7 +573,19 @@ def usuario_crear():
         flash(f"Ya existe una cuenta con el nombre de usuario '{nameUser}'.", 'danger')
         return redirect(url_for('auth.usuarios'))
 
-    nuevo_usuario = User(nameUser=nameUser, isAdmin=False, activo=True)
+    if not correo_valido(emailUser):
+        flash('Escribe un correo electrónico válido para la cuenta (sirve para recuperar la contraseña).', 'danger')
+        return redirect(url_for('auth.usuarios'))
+    if User.query.filter(db.func.lower(User.emailUser) == emailUser).first():
+        flash('Ese correo ya está registrado en otra cuenta.', 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    errores = errores_contrasena(passwordUser, nameUser)
+    if errores:
+        flash(mensaje_contrasena_invalida(errores), 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    nuevo_usuario = User(nameUser=nameUser, emailUser=emailUser, isAdmin=False, activo=True)
     nuevo_usuario.set_password(passwordUser)
     db.session.add(nuevo_usuario)
     db.session.commit()

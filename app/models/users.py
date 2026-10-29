@@ -32,6 +32,12 @@ class User(db.Model, UserMixin):
     # a mano desde la sección de Usuarios. La cuenta 'admin' y las que ya
     # existían antes de este campo quedan activas por defecto.
     activo = db.Column(db.Boolean, default=True, nullable=False)
+    # Si es True, al iniciar sesión la cuenta queda obligada a crear una
+    # contraseña nueva (que cumpla las reglas de seguridad) antes de poder
+    # usar cualquier otra página. Las cuentas que ya existían cuando se
+    # agregaron las reglas quedan marcadas (ver _asegurar_columnas en
+    # app/__init__.py); las cuentas nuevas ya nacen con contraseña segura.
+    debe_cambiar_password = db.Column(db.Boolean, default=False, nullable=False)
 
     # loansUser = db.relationship("Loan", back_populates="user", lazy='dynamic')
     # computerLoansUser = db.relationship('ComputerLoan', back_populates='user', lazy='dynamic')

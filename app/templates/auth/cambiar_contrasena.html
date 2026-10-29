@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Actualiza tu Contraseña - Cultivo de Lulo{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+
+<div class="container py-4">
+
+  {% include 'partials/notificaciones.html' %}
+
+  <div class="login-card-container mx-auto" style="max-width: 560px;">
+    <div class="login-form-side text-center" style="min-height: auto;">
+      <div class="form-panel form-panel-centered panel-visible">
+
+        <div class="mb-3 text-center">
+          <div class="brand-logo-badge mx-auto">
+            <img src="{{ url_for('static', filename='img/agrolulo-logo.svg') }}" alt="AgroLulo" class="brand-logo-icon">
+          </div>
+          <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+            <span class="fw-bold text-uppercase" style="color: var(--neon-green); font-size: 0.85rem; letter-spacing: 1.5px;">AgroLulo System</span>
+          </div>
+          <h1 class="login-title mb-2">Actualiza tu <span>Contraseña</span></h1>
+          <p class="login-subtitle mb-0">
+            Hola, <strong class="text-white">{{ current_user.nameUser }}</strong>. Mejoramos la seguridad de AgroLulo:
+            para seguir usando tu cuenta, crea una contraseña nueva que cumpla las reglas.
+          </p>
+        </div>
+
+        <div id="cambioError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
+
+        <form method="post" action="{{ url_for('auth.cambiar_contrasena') }}" onsubmit="return validarCambio(event)" class="text-start">
+
+          {% if not current_user.emailUser %}
+          <div class="mb-2">
+            <label for="emailUser" class="form-neon-label">
+              <i class="bi bi-envelope me-1"></i> Correo Electrónico <span class="text-muted" style="font-size: 0.78rem;">(para recuperar tu contraseña)</span>
+            </label>
+            <div class="input-group input-group-neon mb-2">
+              <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+              <input type="email" name="emailUser" id="emailUser" class="form-control" placeholder="tucorreo@ejemplo.com" required autocomplete="email">
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="mb-2">
+            <label for="nuevaPassword" class="form-neon-label">
+              <i class="bi bi-lock me-1"></i> Nueva Contraseña
+            </label>
+            <div class="input-group input-group-neon mb-2">
+              <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+              <input type="password" name="nueva_password" id="nuevaPassword" class="form-control" placeholder="Crea tu nueva contraseña" required autocomplete="new-password">
+            </div>
+            <ul class="reglas-contrasena list-unstyled mb-1" id="cambioReglas">
+              <li data-regla="largo"><i class="bi bi-circle"></i> Mínimo 8 caracteres</li>
+              <li data-regla="mayuscula"><i class="bi bi-circle"></i> Una letra mayúscula</li>
+              <li data-regla="minuscula"><i class="bi bi-circle"></i> Una letra minúscula</li>
+              <li data-regla="numero"><i class="bi bi-circle"></i> Un número</li>
+              <li data-regla="usuario"><i class="bi bi-circle"></i> Que no contenga tu usuario</li>
+            </ul>
+          </div>
+
+          <div class="mb-3">
+            <label for="confirmarPassword" class="form-neon-label">
+              <i class="bi bi-shield-lock me-1"></i> Confirmar Nueva Contraseña
+            </label>
+            <div class="input-group input-group-neon mb-2">
+              <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+              <input type="password" name="confirmar_password" id="confirmarPassword" class="form-control" placeholder="Repite tu nueva contraseña" required autocomplete="new-password">
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 mb-3">
+            <button type="submit" class="btn btn-neon-primary py-3">
+              <i class="bi bi-check2-circle me-2"></i> Guardar y Continuar
+            </button>
+          </div>
+        </form>
+
+        <div class="text-center pt-1">
+          <a href="{{ url_for('auth.logout') }}" class="link-neon" style="font-size: 0.9rem;">
+            <i class="bi bi-box-arrow-left me-1"></i> Cerrar sesión
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/reglas-contrasena.js') }}"></script>
+<script>
+  const usuarioActual = {{ current_user.nameUser|tojson }};
+  const nuevaPassword = document.getElementById('nuevaPassword');
+  nuevaPassword.addEventListener('input', () => pintarReglas('cambioReglas', nuevaPassword.value, usuarioActual));
+
+  function validarCambio(event) {
+    const errorBox = document.getElementById('cambioError');
+    const password = nuevaPassword.value;
+    if (!pintarReglas('cambioReglas', password, usuarioActual)) {
+      event.preventDefault();
+      errorBox.textContent = 'Tu nueva contraseña aún no cumple todas las reglas de seguridad.';
+      errorBox.classList.remove('d-none');
+      return false;
+    }
+    if (password !== document.getElementById('confirmarPassword').value) {
+      event.preventDefault();
+      errorBox.textContent = 'Las contraseñas no coinciden. Por favor verifícalas.';
+      errorBox.classList.remove('d-none');
+      return false;
+    }
+    return true;
+  }
+</script>
+{% endblock %}

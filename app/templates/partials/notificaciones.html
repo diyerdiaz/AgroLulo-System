@@ -1,0 +1,32 @@
+{# Notificaciones flotantes (mensajes flash). Se incluye en todas las páginas
+   con {% include 'partials/notificaciones.html' %}. El estilo está en
+   static/css/style.css (.notificaciones) y el cierre automático en
+   static/js/notificaciones.js. #}
+{% set tipos = {
+  'success': {'titulo': '¡Listo!', 'icono': 'bi-check-circle-fill'},
+  'danger': {'titulo': 'Algo salió mal', 'icono': 'bi-x-octagon-fill'},
+  'warning': {'titulo': 'Atención', 'icono': 'bi-exclamation-triangle-fill'},
+  'info': {'titulo': 'Aviso', 'icono': 'bi-info-circle-fill'},
+} %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="notificaciones" aria-live="polite">
+  {% for category, message in messages %}
+  {% set tipo = category if category in tipos else 'info' %}
+  <div class="notificacion notificacion-{{ tipo }}" role="{{ 'alert' if tipo == 'danger' else 'status' }}"
+       data-duracion="{{ 8000 if tipo == 'danger' else 5000 }}">
+    <div class="notificacion-icono"><i class="bi {{ tipos[tipo].icono }}"></i></div>
+    <div class="notificacion-texto">
+      <strong>{{ tipos[tipo].titulo }}</strong>
+      <span>{{ message }}</span>
+    </div>
+    <button type="button" class="notificacion-cerrar" aria-label="Cerrar notificación">
+      <i class="bi bi-x-lg"></i>
+    </button>
+    <div class="notificacion-progreso"></div>
+  </div>
+  {% endfor %}
+</div>
+<script src="{{ url_for('static', filename='js/notificaciones.js') }}"></script>
+{% endif %}
+{% endwith %}

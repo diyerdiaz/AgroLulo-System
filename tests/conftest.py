@@ -60,7 +60,12 @@ def user(app):
 @pytest.fixture
 def admin(app):
     from app.models.users import User
-    return User.query.filter_by(nameUser='admin').first()
+    admin = User.query.filter_by(nameUser='admin').first()
+    # El admin sembrado nace obligado a cambiar su contraseña ('123'); para
+    # los tests que lo usan como administrador normal se quita esa marca.
+    admin.debe_cambiar_password = False
+    db.session.commit()
+    return admin
 
 
 @pytest.fixture

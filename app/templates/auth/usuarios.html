@@ -132,16 +132,7 @@
       </span>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show border-0 bg-dark text-light shadow-lg mb-4" style="border-left: 4px solid var(--neon-green) !important;" role="alert">
-      <i class="bi bi-info-circle me-2 text-success"></i> {{ message }}
-      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+    {% include 'partials/notificaciones.html' %}
 
     <!-- Encabezado de la Página -->
     <div class="dash-card mb-4">
@@ -177,7 +168,7 @@
           <h4 class="fw-bold text-white mb-0 fs-5">Crear Cuenta Nueva</h4>
         </div>
         <form method="post" action="{{ url_for('auth.usuario_crear') }}" class="row g-3">
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-4">
             <label for="nameUserNuevo" class="form-neon-label">
               <i class="bi bi-person me-1"></i> Nombre de Usuario
             </label>
@@ -186,7 +177,16 @@
               <input type="text" name="nameUser" id="nameUserNuevo" class="form-control" placeholder="Nombre de usuario" required>
             </div>
           </div>
-          <div class="col-12 col-md-6">
+          <div class="col-12 col-md-4">
+            <label for="emailUserNuevo" class="form-neon-label">
+              <i class="bi bi-envelope me-1"></i> Correo Electrónico
+            </label>
+            <div class="input-group input-group-neon">
+              <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+              <input type="email" name="emailUser" id="emailUserNuevo" class="form-control" placeholder="correo@ejemplo.com" required autocomplete="off">
+            </div>
+          </div>
+          <div class="col-12 col-md-4">
             <label for="passwordUserNuevo" class="form-neon-label">
               <i class="bi bi-key me-1"></i> Contraseña
             </label>
@@ -197,7 +197,8 @@
           </div>
           <div class="col-12">
             <small class="text-muted" style="font-size: 0.8rem;">
-              <i class="bi bi-info-circle me-1"></i> La cuenta quedará activa de inmediato, sin necesidad de aprobarla después.
+              <i class="bi bi-info-circle me-1"></i> La cuenta quedará activa de inmediato, sin necesidad de aprobarla después.<br>
+              <i class="bi bi-shield-lock me-1"></i> La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula y un número.
             </small>
           </div>
           <div class="col-12 d-grid">
