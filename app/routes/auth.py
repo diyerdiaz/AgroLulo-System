@@ -8,65 +8,16 @@ from app.models.actividad import ActividadCultivo
 from app.models.codigo_recuperacion import CodigoRecuperacion
 from app.utils.helpers import formato_moneda
 from app.utils.correo import correo_valido, enviar_codigo_recuperacion
-from app.utils.seguridad import errores_contrasena, mensaje_contrasena_invalida
+from app.utils.seguridad import (
+    errores_contrasena, mensaje_contrasena_invalida,
+    ip_solicitante, segundos_bloqueo_restante, registrar_intento_fallido, limpiar_intentos,
+)
 from app import db
 from datetime import date, datetime, timedelta, timezone
-from time import time
-from collections import defaultdict
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
 bp = Blueprint('auth', __name__)
-
-# --- Bloqueo por intentos fallidos de inicio de sesión (fuerza bruta) ---
-# Guarda en memoria, por dirección IP, los intentos fallidos recientes.
-# Como el servidor corre con un solo worker de Gunicorn (ver Dockerfile),
-# un diccionario en memoria es suficiente: no hace falta una base de
-# datos ni Redis aparte para esto.
-INTENTOS_MAXIMOS = 5
-VENTANA_SEGUNDOS = 15 * 60  # 15 minutos
-BLOQUEO_SEGUNDOS = 15 * 60  # 15 minutos bloqueado tras agotar los intentos
-
-_intentos_fallidos = defaultdict(list)  # ip -> lista de timestamps de intentos fallidos
-_bloqueado_hasta = {}  # ip -> timestamp hasta el que queda bloqueada
-
-
-def _ip_solicitante():
-    return request.remote_addr or 'desconocida'
-
-
-def _segundos_bloqueo_restante(ip):
-    """Si la IP sigue bloqueada, devuelve cuántos segundos le faltan (>0).
-    Si ya no está bloqueada, devuelve 0."""
-    vence = _bloqueado_hasta.get(ip)
-    if not vence:
-        return 0
-    restante = vence - time()
-    if restante <= 0:
-        _bloqueado_hasta.pop(ip, None)
-        return 0
-    return restante
-
-
-def _registrar_intento_fallido(ip):
-    """Anota un intento fallido y, si ya se llegó al máximo permitido
-    dentro de la ventana de tiempo, bloquea esa IP por un rato."""
-    ahora = time()
-    intentos = _intentos_fallidos[ip]
-    intentos.append(ahora)
-    # Descarta intentos viejos que ya salieron de la ventana de tiempo.
-    intentos[:] = [t for t in intentos if ahora - t <= VENTANA_SEGUNDOS]
-
-    if len(intentos) >= INTENTOS_MAXIMOS:
-        _bloqueado_hasta[ip] = ahora + BLOQUEO_SEGUNDOS
-        intentos.clear()
-
-
-def _limpiar_intentos(ip):
-    """Se llama tras un inicio de sesión exitoso: borra el historial de
-    intentos fallidos de esa IP."""
-    _intentos_fallidos.pop(ip, None)
-    _bloqueado_hasta.pop(ip, None)
 
 MESES_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
@@ -79,8 +30,8 @@ PALETA_CULTIVOS = ['#39ff14', '#4cc9f0', '#ffb703', '#b5179e', '#ff4d4d', '#06d6
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        ip = _ip_solicitante()
-        restante = _segundos_bloqueo_restante(ip)
+        ip = ip_solicitante()
+        restante = segundos_bloqueo_restante(ip)
         if restante > 0:
             minutos = max(1, round(restante / 60))
             flash(f'Demasiados intentos fallidos. Intenta de nuevo en unos {minutos} minuto(s).', 'danger')
@@ -99,7 +50,7 @@ def login():
                 flash('Tu cuenta ya fue creada, pero está esperando a que el administrador la active. Intenta iniciar sesión más tarde.', 'warning')
                 return redirect(url_for('auth.login'))
 
-            _limpiar_intentos(ip)
+            limpiar_intentos(ip)
             # Si la contraseña con la que entró no cumple las reglas de
             # seguridad actuales, también se le obliga a cambiarla.
             if errores_contrasena(passwordUser, user.nameUser) and not user.debe_cambiar_password:
@@ -111,7 +62,7 @@ def login():
             flash(f"¡Bienvenido de nuevo, {user.nameUser}! Acceso concedido.", "success")
             return redirect(url_for('auth.dashboard'))
 
-        _registrar_intento_fallido(ip)
+        registrar_intento_fallido(ip)
         flash('Credenciales inválidas. Usuario o contraseña incorrectos.', 'danger')
     
     if current_user.is_authenticated:

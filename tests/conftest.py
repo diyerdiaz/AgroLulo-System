@@ -2,7 +2,7 @@ import pytest
 from datetime import date
 
 from app import create_app, db
-from app.routes import auth
+from app.utils import seguridad
 
 
 @pytest.fixture
@@ -15,8 +15,8 @@ def app():
     })
     # El bloqueo por intentos fallidos se guarda en memoria del módulo:
     # se limpia para que un test no afecte al siguiente.
-    auth._intentos_fallidos.clear()
-    auth._bloqueado_hasta.clear()
+    seguridad._intentos_fallidos.clear()
+    seguridad._bloqueado_hasta.clear()
     with app.app_context():
         yield app
         db.session.remove()
