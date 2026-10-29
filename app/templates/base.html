@@ -17,16 +17,7 @@
     {% block full_content %}
     <div class="container mt-4 mx-auto">
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      {% for category, message in messages %}
-      <div class="flash-message alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-      {% endfor %}
-      {% endif %}
-      {% endwith %}
+      {% include 'partials/notificaciones.html' %}
 
       <div class="row justify-content-center">
         <div class="col-md-10">
