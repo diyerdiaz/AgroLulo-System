@@ -69,16 +69,25 @@ def test_codigo_se_guarda_encriptado(client, cuenta, correos):
     assert registro.codigo_hash != correos[0]['codigo']
 
 
-def test_cuenta_inexistente_muestra_el_mismo_mensaje(client, correos):
-    response = pedir_codigo(client, 'nadie')
-    assert 'te enviamos'.encode() in response.data
+@pytest.mark.parametrize('dato', ['nadie', 'nadie@ejemplo.com'])
+def test_cuenta_inexistente_dice_que_no_existe(client, correos, dato):
+    response = pedir_codigo(client, dato)
+    assert 'El usuario o correo no existe'.encode() in response.data
+    assert 'Listo, te enviamos'.encode() not in response.data
     assert correos == []
 
 
-def test_cuenta_sin_correo_no_envia_nada(client, correos):
+def test_cuenta_inexistente_no_deja_pasar_al_paso_del_codigo(client, correos):
+    pedir_codigo(client, 'nadie')
+    response = verificar_codigo(client, '123456')
+    assert 'Primero solicita un código'.encode() in response.data
+
+
+def test_cuenta_sin_correo_avisa_y_no_envia_nada(client, correos):
     crear_usuario('sin_correo')
     response = pedir_codigo(client, 'sin_correo')
-    assert 'te enviamos'.encode() in response.data
+    assert 'no tiene un correo registrado'.encode() in response.data
+    assert 'Listo, te enviamos'.encode() not in response.data
     assert correos == []
 
 
