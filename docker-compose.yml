@@ -2,10 +2,18 @@ services:
   agrolulo:
     build: .
     container_name: agrolulo_system
-    env_file:
-      # Trae la SECRET_KEY fija (entre otras variables que se agreguen a
-      # futuro) desde el archivo .env de esta misma carpeta.
-      - .env
+    environment:
+      # Este archivo SÍ se sube a GitHub: aquí NUNCA van datos reales, solo
+      # los nombres de las variables. Docker Compose toma cada ${VALOR} del
+      # archivo .env de esta misma carpeta, que nunca se sube a git.
+      # Si falta uno obligatorio (:?), el contenedor no arranca y lo avisa.
+      SECRET_KEY: ${SECRET_KEY:?Falta SECRET_KEY en el archivo .env}
+      MAIL_SERVER: ${MAIL_SERVER:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:?Falta MAIL_USERNAME en el archivo .env}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?Falta MAIL_PASSWORD en el archivo .env}
+      MAIL_SENDER: ${MAIL_SENDER:-}
+      APP_URL: ${APP_URL:-http://127.0.0.1:5000}
     ports:
       - "5000:5000"
     volumes:
