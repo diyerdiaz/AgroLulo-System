@@ -196,7 +196,7 @@ def test_correo_se_envia_con_la_foto_incrustada(app, monkeypatch):
             return self
         def __exit__(self, *args):
             return False
-        def starttls(self):
+        def starttls(self, context=None):
             pass
         def login(self, usuario, clave):
             self.login_con = (usuario, clave)
