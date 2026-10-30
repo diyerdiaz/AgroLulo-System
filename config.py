@@ -33,6 +33,15 @@ class Config:
     # (1 hora), un formulario abierto un buen rato fallaría al enviarse.
     WTF_CSRF_TIME_LIMIT = None
 
+    # Poner DETRAS_DE_HTTPS=1 solo cuando la página esté publicada detrás de
+    # un proxy con HTTPS (Caddy, Nginx...). Activa la cookie Secure y HSTS, y
+    # hace que la IP se lea de ese proxy. Sin HTTPS debe quedar en 0: con la
+    # cookie Secure, el navegador no guardaría la sesión y nadie podría entrar.
+    DETRAS_DE_HTTPS = os.environ.get('DETRAS_DE_HTTPS', '0') == '1'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = DETRAS_DE_HTTPS
+
     # Correo desde el que se envían los códigos de recuperación de
     # contraseña. Los datos reales van en el archivo .env (nunca en el
     # código). Con Gmail: activar la verificación en dos pasos en la cuenta

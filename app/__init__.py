@@ -1,5 +1,6 @@
 from flask import Flask, flash, redirect, url_for
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_compress import Compress
@@ -7,6 +8,8 @@ from flask_wtf.csrf import CSRFProtect, CSRFError
 from sqlalchemy import text
 import os
 import secrets
+
+from app.utils.seguridad import agregar_cabeceras_seguridad
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -50,6 +53,10 @@ def create_app(config_extra=None):
     login_manager.login_view = 'auth.login'
     compress.init_app(app)
     csrf.init_app(app)
+    app.after_request(agregar_cabeceras_seguridad)
+    if app.config['DETRAS_DE_HTTPS']:
+        # Sin esto, todas las visitas parecerían venir de la IP del proxy.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     @login_manager.user_loader
     def load_user(idUser):
