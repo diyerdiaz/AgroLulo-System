@@ -78,8 +78,9 @@ def login():
 CODIGO_MINUTOS_VALIDEZ = 15
 CODIGO_INTENTOS_MAXIMOS = 5
 CODIGO_SEGUNDOS_ENTRE_ENVIOS = 60
-MENSAJE_CODIGO_ENVIADO = ('Listo, te enviamos un código de 6 dígitos a tu correo. '
-                          'Revisa tu bandeja de entrada (y la carpeta de spam).')
+MENSAJE_CODIGO_ENVIADO = ('Si los datos son de una cuenta con correo registrado, te enviamos un código '
+                          'de 6 dígitos. Revisa tu bandeja de entrada (y la carpeta de spam). Si tu cuenta '
+                          'no tiene correo, pídele al administrador que te ayude.')
 
 
 def _ahora():
@@ -97,51 +98,50 @@ def _buscar_cuenta(usuario_o_correo):
 @bp.route('/recuperar', methods=['POST'])
 def recuperar_contrasena():
     """
-    Paso 1 de "¿Olvidaste tu contraseña?": recibe el usuario o el correo y
-    revisa que la cuenta exista. Si no existe (o no tiene correo para
-    mandarle el código), se queda en este paso y se lo dice; si existe, le
-    envía un código de 6 dígitos y pasa al paso 2.
+    Paso 1 de "¿Olvidaste tu contraseña?": recibe el usuario o el correo y,
+    si la cuenta existe y tiene correo, le envía un código de 6 dígitos. La
+    respuesta es la misma en todos los casos: así nadie puede usar este
+    formulario para averiguar qué cuentas o correos están registrados.
     """
     usuario_correo = request.form.get('usuarioCorreo', '').strip()
     if not usuario_correo:
         flash('Escribe tu usuario o tu correo electrónico para recuperar la contraseña.', 'danger')
         return render_template("auth/login.html", show_recover=True)
 
-    user = _buscar_cuenta(usuario_correo)
-    if not user:
-        flash('El usuario o correo no existe.', 'danger')
-        return render_template("auth/login.html", show_recover=True, usuario_correo=usuario_correo)
-    if not user.emailUser:
-        flash('Esta cuenta no tiene un correo registrado, así que no podemos enviarle el código. '
-              'Pídele al administrador que te ayude a recuperar el acceso.', 'warning')
-        return render_template("auth/login.html", show_recover=True, usuario_correo=usuario_correo)
+    ip = ip_solicitante()
+    if segundos_bloqueo_restante(ip, 'recuperar') > 0:
+        flash('Demasiadas solicitudes desde esta conexión. Intenta de nuevo en una hora.', 'danger')
+        return render_template("auth/login.html", show_recover=True)
+    registrar_intento(ip, 'recuperar')
 
+    user = _buscar_cuenta(usuario_correo)
     session['recuperar_para'] = usuario_correo
     session.pop('recuperar_codigo_ok', None)
 
-    ultimo = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
-              .order_by(CodigoRecuperacion.creado.desc()).first())
-    # Evita que alguien llene de correos a otra persona pidiendo códigos sin parar.
-    muy_seguido = ultimo and (_ahora() - ultimo.creado).total_seconds() < CODIGO_SEGUNDOS_ENTRE_ENVIOS
-    if not muy_seguido:
-        codigo = f"{secrets.randbelow(10**6):06d}"
-        try:
-            enviar_codigo_recuperacion(user.emailUser, user.nameUser, codigo, CODIGO_MINUTOS_VALIDEZ)
-        except Exception as e:
-            current_app.logger.error('No se pudo enviar el código de recuperación: %s', e)
-            flash('No pudimos enviar el correo en este momento. Intenta de nuevo más tarde.', 'danger')
-            return render_template("auth/login.html", show_recover=True, usuario_correo=usuario_correo)
+    if user and user.emailUser:
+        ultimo = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
+                  .order_by(CodigoRecuperacion.creado.desc()).first())
+        # Evita que alguien llene de correos a otra persona pidiendo códigos sin parar.
+        muy_seguido = ultimo and (_ahora() - ultimo.creado).total_seconds() < CODIGO_SEGUNDOS_ENTRE_ENVIOS
+        if not muy_seguido:
+            codigo = f"{secrets.randbelow(10**6):06d}"
+            try:
+                enviar_codigo_recuperacion(user.emailUser, user.nameUser, codigo, CODIGO_MINUTOS_VALIDEZ)
+            except Exception as e:
+                current_app.logger.error('No se pudo enviar el código de recuperación: %s', e)
+                flash('No pudimos enviar el correo en este momento. Intenta de nuevo más tarde.', 'danger')
+                return render_template("auth/login.html", show_recover=True, usuario_correo=usuario_correo)
 
-        # Solo queda vigente el código más reciente de la cuenta.
-        CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
-        db.session.add(CodigoRecuperacion(
-            idUser=user.idUser,
-            codigo_hash=generate_password_hash(codigo, method='pbkdf2:sha256'),
-            creado=_ahora(),
-            expira=_ahora() + timedelta(minutes=CODIGO_MINUTOS_VALIDEZ),
-            intentos=0,
-        ))
-        db.session.commit()
+            # Solo queda vigente el código más reciente de la cuenta.
+            CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
+            db.session.add(CodigoRecuperacion(
+                idUser=user.idUser,
+                codigo_hash=generate_password_hash(codigo, method='pbkdf2:sha256'),
+                creado=_ahora(),
+                expira=_ahora() + timedelta(minutes=CODIGO_MINUTOS_VALIDEZ),
+                intentos=0,
+            ))
+            db.session.commit()
 
     flash(MENSAJE_CODIGO_ENVIADO, 'info')
     return render_template("auth/login.html", show_codigo=True)
@@ -162,16 +162,22 @@ def recuperar_codigo():
     codigo = request.form.get('codigo', '').strip()
     user = _buscar_cuenta(usuario_correo)
     registro = None
+    clave_cuenta = None
     if user:
+        clave_cuenta = f'cuenta:{user.idUser}'
         registro = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
                     .order_by(CodigoRecuperacion.creado.desc()).first())
 
+    # Además del límite de cada código, los fallos se cuentan por cuenta:
+    # pedir un código nuevo no le da a un atacante más intentos.
     vigente = (registro is not None and registro.expira > _ahora()
-               and registro.intentos < CODIGO_INTENTOS_MAXIMOS)
+               and registro.intentos < CODIGO_INTENTOS_MAXIMOS
+               and segundos_bloqueo_restante(clave_cuenta, 'codigo') == 0)
     if not vigente or not check_password_hash(registro.codigo_hash, codigo):
         if vigente:
             registro.intentos += 1
             db.session.commit()
+            registrar_intento(clave_cuenta, 'codigo')
         flash('El código es incorrecto o ya venció. Revísalo o solicita uno nuevo.', 'danger')
         return render_template("auth/login.html", show_codigo=True)
 
@@ -214,6 +220,7 @@ def recuperar_nueva():
     user.set_password(nueva_password)
     CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
     db.session.commit()
+    limpiar_intentos(f'cuenta:{user.idUser}', 'codigo')
     session.pop('recuperar_codigo_ok', None)
     session.pop('recuperar_para', None)
     flash('¡Listo! Tu contraseña se cambió. Ya puedes iniciar sesión con la nueva.', 'success')

@@ -5,6 +5,7 @@ import pytest
 from app import db
 from app.models.codigo_recuperacion import CodigoRecuperacion
 from app.routes import auth
+from app.utils.seguridad import LIMITES
 from tests.conftest import crear_usuario
 
 
@@ -70,25 +71,45 @@ def test_codigo_se_guarda_encriptado(client, cuenta, correos):
 
 
 @pytest.mark.parametrize('dato', ['nadie', 'nadie@ejemplo.com'])
-def test_cuenta_inexistente_dice_que_no_existe(client, correos, dato):
+def test_cuenta_inexistente_responde_igual_y_no_envia_nada(client, cuenta, correos, dato):
+    real = pedir_codigo(client, 'lulero')
     response = pedir_codigo(client, dato)
-    assert 'El usuario o correo no existe'.encode() in response.data
-    assert 'Listo, te enviamos'.encode() not in response.data
-    assert correos == []
+    assert response.data.replace(dato.encode(), b'') == real.data.replace(b'lulero', b'')
+    assert len(correos) == 1
 
 
-def test_cuenta_inexistente_no_deja_pasar_al_paso_del_codigo(client, correos):
+def test_cuenta_inexistente_no_acepta_ningun_codigo(client, correos):
     pedir_codigo(client, 'nadie')
     response = verificar_codigo(client, '123456')
-    assert 'Primero solicita un código'.encode() in response.data
+    assert 'incorrecto o ya venció'.encode() in response.data
 
 
-def test_cuenta_sin_correo_avisa_y_no_envia_nada(client, correos):
+def test_cuenta_sin_correo_responde_igual_y_no_envia_nada(client, correos):
     crear_usuario('sin_correo')
     response = pedir_codigo(client, 'sin_correo')
-    assert 'no tiene un correo registrado'.encode() in response.data
-    assert 'Listo, te enviamos'.encode() not in response.data
+    assert 'pídele al administrador'.encode() in response.data
     assert correos == []
+
+
+def test_pedir_codigos_nuevos_no_da_mas_intentos(client, cuenta, correos, monkeypatch):
+    monkeypatch.setattr(auth, 'CODIGO_SEGUNDOS_ENTRE_ENVIOS', 0)
+    for _ in range(LIMITES['codigo'][0] // 5):
+        pedir_codigo(client, 'lulero')
+        for _ in range(5):
+            verificar_codigo(client, 'abcdef')
+
+    pedir_codigo(client, 'lulero')
+    response = verificar_codigo(client, correos[-1]['codigo'])
+    assert 'Código verificado'.encode() not in response.data
+
+
+def test_limite_de_solicitudes_por_conexion(client, cuenta, correos, monkeypatch):
+    monkeypatch.setattr(auth, 'CODIGO_SEGUNDOS_ENTRE_ENVIOS', 0)
+    for _ in range(LIMITES['recuperar'][0]):
+        pedir_codigo(client, 'lulero')
+    response = pedir_codigo(client, 'lulero')
+    assert 'Demasiadas solicitudes'.encode() in response.data
+    assert len(correos) == LIMITES['recuperar'][0]
 
 
 def test_codigo_correcto_cambia_la_contrasena(client, cuenta, correos):
