@@ -9,8 +9,6 @@ from sqlalchemy import text
 import os
 import secrets
 
-from app.utils.seguridad import agregar_cabeceras_seguridad
-
 db = SQLAlchemy()
 login_manager = LoginManager()
 # Comprime automáticamente (gzip/brotli) las respuestas HTML, CSS y JS antes
@@ -53,6 +51,8 @@ def create_app(config_extra=None):
     login_manager.login_view = 'auth.login'
     compress.init_app(app)
     csrf.init_app(app)
+
+    from app.utils.seguridad import agregar_cabeceras_seguridad
     app.after_request(agregar_cabeceras_seguridad)
     if app.config['DETRAS_DE_HTTPS']:
         # Sin esto, todas las visitas parecerían venir de la IP del proxy.
