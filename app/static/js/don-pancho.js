@@ -238,7 +238,11 @@
   function marcarVisto() {
     if (raiz.dataset.mostrar !== '1') return;
     raiz.dataset.mostrar = '0';
-    fetch(raiz.dataset.urlVisto, { method: 'POST', credentials: 'same-origin' })
+    fetch(raiz.dataset.urlVisto, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content }
+    })
       .catch(function () { /* si falla, la próxima vez vuelve a salir; no pasa nada grave */ });
   }
 

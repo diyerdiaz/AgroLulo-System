@@ -160,6 +160,7 @@
           </h4>
 
           <form action="{{ url_for('gastos.agregar', id=cultivo.idCultivo) }}" method="POST" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="col-12">
               <label for="tipo" class="form-neon-label mb-1">Tipo de Gasto</label>
@@ -248,6 +249,7 @@
                     </a>
                     <form action="{{ url_for('gastos.eliminar', id=cultivo.idCultivo, gasto_id=g.id) }}" method="POST"
                       onsubmit="return confirm('¿Eliminar este gasto registrado?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                         <i class="bi bi-trash3"></i>
                       </button>

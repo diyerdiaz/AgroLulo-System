@@ -156,6 +156,7 @@
           </h4>
 
           <form action="{{ url_for('gastos.actualizar_gasto', id=cultivo.idCultivo, gasto_id=gasto.idGasto) }}" method="POST" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="col-12">
               <label for="tipo" class="form-neon-label mb-1">Tipo de Gasto</label>

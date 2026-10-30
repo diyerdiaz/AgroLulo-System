@@ -2,6 +2,7 @@
 {% block titulo_pagina %}Agregar Usuario{% endblock %}
 {% block content %}
 <form action="{{ url_for('user.add') }}" method="post" class="needs-validation" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="form-group mb-3">
         <label for="nameUser" class="form-label">Nombre:</label>
         <input type="text" id="nameUser" name="nameUser" required class="form-control">

@@ -231,6 +231,7 @@
 
               <form action="{{ url_for('cultivos.delete', id=c.idCultivo) }}" method="POST"
                 onsubmit="return confirm('¿Seguro que deseas eliminar este cultivo? Se borrarán también sus ingresos, gastos y etiquetas del calendario.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Eliminar Cultivo">
                   <i class="bi bi-trash-fill"></i>
                 </button>
