@@ -12,6 +12,9 @@ def app():
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'SECRET_KEY': 'clave-de-pruebas',
+        # Los tests envían formularios directo, sin cargar antes la página.
+        # La protección se prueba aparte en tests/test_csrf.py.
+        'WTF_CSRF_ENABLED': False,
     })
     # El bloqueo por intentos fallidos se guarda en memoria del módulo:
     # se limpia para que un test no afecte al siguiente.

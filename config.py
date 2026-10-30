@@ -29,6 +29,10 @@ class Config:
     # foto de celular en JPG/PNG.
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
 
+    # El token CSRF dura lo mismo que la sesión. Con el límite por defecto
+    # (1 hora), un formulario abierto un buen rato fallaría al enviarse.
+    WTF_CSRF_TIME_LIMIT = None
+
     # Correo desde el que se envían los códigos de recuperación de
     # contraseña. Los datos reales van en el archivo .env (nunca en el
     # código). Con Gmail: activar la verificación en dos pasos en la cuenta

@@ -159,6 +159,7 @@
           </p>
 
           <form action="{{ url_for('pagos.pago_actualizar', id=cultivo.idCultivo, grupo_id=grupo_id) }}" method="POST" class="row g-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="col-12">
               <label for="monto" class="form-neon-label mb-1">Monto Pagado ($)</label>

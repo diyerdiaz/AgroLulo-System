@@ -162,6 +162,7 @@
           </h4>
 
           <form action="{{ url_for('ingresos.cosecha_actualizar', id=cultivo.idCultivo, grupo_id=grupo_id) }}" method="POST" class="row g-3" id="formCosecha">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="origen" value="{{ origen }}">
 
             <div class="col-12">

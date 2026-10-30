@@ -163,6 +163,7 @@
           <h4 class="fw-bold text-white mb-0 fs-5">Crear Cuenta Nueva</h4>
         </div>
         <form method="post" action="{{ url_for('auth.usuario_crear') }}" class="row g-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <div class="col-12 col-md-4">
             <label for="nameUserNuevo" class="form-neon-label">
               <i class="bi bi-person me-1"></i> Nombre de Usuario
@@ -279,12 +280,14 @@
                       {% endif %}
                       {% if u.activo %}
                       <form method="post" action="{{ url_for('auth.usuario_bloquear', id=u.idUser) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Bloquear cuenta">
                           <i class="bi bi-slash-circle me-1"></i> Bloquear
                         </button>
                       </form>
                       {% else %}
                       <form method="post" action="{{ url_for('auth.usuario_activar', id=u.idUser) }}" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-success px-2 py-1" title="Activar cuenta">
                           <i class="bi bi-check-circle me-1"></i> Activar
                         </button>
@@ -292,6 +295,7 @@
                       {% endif %}
                       <form method="post" action="{{ url_for('auth.usuario_eliminar', id=u.idUser) }}" class="d-inline"
                         onsubmit="return confirm('¿Seguro que deseas eliminar la cuenta \'{{ u.nameUser }}\'? Se borrará junto con todos sus cultivos, ingresos, gastos, pagos y calendario. Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Eliminar cuenta">
                           <i class="bi bi-trash-fill me-1"></i> Eliminar
                         </button>

@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, flash, redirect, url_for
 from werkzeug.exceptions import HTTPException
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_compress import Compress
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from sqlalchemy import text
 import os
 import secrets
@@ -13,6 +14,9 @@ login_manager = LoginManager()
 # de enviarlas al navegador. Esto reduce bastante el peso de cada página sin
 # tener que tocar los archivos: mismo contenido, menos bytes viajando.
 compress = Compress()
+# Exige un token secreto en cada POST: una página ajena no lo conoce, así que
+# no puede enviar formularios usando la sesión de quien la esté visitando.
+csrf = CSRFProtect()
 
 
 def _asegurar_columnas(tabla, columnas):
@@ -45,6 +49,7 @@ def create_app(config_extra=None):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     compress.init_app(app)
+    csrf.init_app(app)
 
     @login_manager.user_loader
     def load_user(idUser):
@@ -79,6 +84,13 @@ def create_app(config_extra=None):
     # Comandos de consola (flask <comando>): crear-admin, datos-demo, recordatorios.
     from app import comandos
     comandos.registrar(app)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        # Pasa si la sesión venció con el formulario abierto, o si el envío
+        # no salió de esta página. Nada se guarda: se le pide intentar de nuevo.
+        flash('Tu sesión venció o el formulario ya no es válido. Intenta de nuevo.', 'warning')
+        return redirect(url_for('auth.login'))
 
     @app.errorhandler(Exception)
     def handle_error(e):
