@@ -6,7 +6,7 @@ from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.ingreso import IngresoCultivo
 from app.models.actividad import ActividadCultivo
 from app.models.codigo_recuperacion import CodigoRecuperacion
-from app.utils.helpers import formato_moneda
+from app.utils.panel_admin import calcular_panel, detalle_cultivador
 from app.utils.correo import correo_valido, enviar_codigo_recuperacion
 from app.utils.seguridad import (
     errores_contrasena, mensaje_contrasena_invalida,
@@ -57,6 +57,11 @@ def login():
                 user.debe_cambiar_password = True
                 db.session.commit()
             login_user(user)
+            user.ultimo_acceso = datetime.utcnow()
+            db.session.commit()
+            # Al entrar de nuevo, Don Pancho vuelve a preguntar por los
+            # trabajos sin marcar aunque antes le hubieran dicho "Después".
+            session.pop('pendientes_pospuestos', None)
             if user.debe_cambiar_password:
                 return redirect(url_for('auth.cambiar_contrasena'))
             flash(f"¡Bienvenido de nuevo, {user.nameUser}! Acceso concedido.", "success")
@@ -228,6 +233,31 @@ def exigir_cambio_de_contrasena():
         return redirect(url_for('auth.cambiar_contrasena'))
 
 
+# Secciones del cultivador. El administrador no lleva cultivos: solo
+# administra cuentas y mira el panel (que no muestra cifras de nadie).
+_SECCIONES_DEL_CULTIVADOR = {'cultivos', 'calendario', 'ingresos', 'gastos', 'pagos', 'analisis'}
+
+
+@bp.before_app_request
+def admin_fuera_de_secciones_del_cultivador():
+    if (current_user.is_authenticated and current_user.isAdmin
+            and request.blueprint in _SECCIONES_DEL_CULTIVADOR):
+        flash('Esa sección es para los cultivadores. Como administrador, aquí tienes tu panel.', 'info')
+        return redirect(url_for('auth.dashboard'))
+
+
+@bp.before_app_request
+def registrar_actividad():
+    """Guarda cuándo fue la última vez que la cuenta usó la plataforma, a lo
+    sumo cada 5 minutos (para no escribir en la base de datos en cada clic)."""
+    if not current_user.is_authenticated or request.endpoint == 'static':
+        return
+    ahora = datetime.utcnow()
+    if not current_user.ultimo_acceso or ahora - current_user.ultimo_acceso > timedelta(minutes=5):
+        current_user.ultimo_acceso = ahora
+        db.session.commit()
+
+
 @bp.route('/cambiar-contrasena', methods=['GET', 'POST'])
 @login_required
 def cambiar_contrasena():
@@ -285,6 +315,11 @@ def dashboard():
     cero (antes esta página tenía datos de ejemplo fijos que no cambiaban
     aunque se borraran los cultivos).
     """
+    if current_user.isAdmin:
+        # El administrador tiene su propio panel, minimalista y sin cifras
+        # de los cultivadores (ver utils/panel_admin.py).
+        return render_template('auth/dashboard_admin.html', panel=calcular_panel())
+
     cultivos = Cultivo.query.filter_by(idUser=current_user.idUser).order_by(Cultivo.idCultivo.desc()).all()
     total_cultivos = len(cultivos)
 
@@ -587,87 +622,29 @@ def _paginar_usuarios(lista, pagina_solicitada, por_pagina=USUARIOS_POR_PAGINA):
     return lista[inicio:inicio + por_pagina], pagina, total_paginas
 
 
-@bp.route('/usuarios/estadisticas')
+@bp.route('/panel/cultivador/<int:id>')
 @login_required
-def estadisticas_usuarios():
-    """Un pequeño resumen, por cada cuenta registrada, de sus cultivos:
-    cuántos tiene, cuántas hectáreas, cuánto ha registrado en ingresos,
-    gastos y ganancias, cuánto ha producido en Kg, y el detalle de cada
-    uno de sus lotes por separado. Solo la cuenta administradora la ve."""
+def ficha_cultivador(id):
+    """Ficha de un cultivador para el administrador: cómo ha usado la cuenta
+    en cada uno de sus cultivos, en gráficos de pastel con porcentajes (sin
+    ningún monto de plata). La arma utils/panel_admin.py."""
     if not current_user.isAdmin:
         flash('Solo el administrador puede ver esa sección.', 'danger')
         return redirect(url_for('auth.dashboard'))
 
-    usuarios = User.query.order_by(User.idUser.asc()).all()
-    resumen = []
+    usuario = User.query.get_or_404(id)
+    if usuario.isAdmin:
+        return redirect(url_for('auth.dashboard'))
+    return render_template('auth/detalle_cultivador.html', ficha=detalle_cultivador(usuario))
 
-    for u in usuarios:
-        cultivos = Cultivo.query.filter_by(idUser=u.idUser).order_by(Cultivo.idCultivo.desc()).all()
 
-        total_hectareas = 0.0
-        total_ingresos = 0.0
-        total_gastos = 0.0
-        total_produccion = 0.0
-        detalle_cultivos = []
-
-        for c in cultivos:
-            ingresos_c = db.session.query(
-                db.func.coalesce(db.func.sum(IngresoCultivo.valor), 0.0)
-            ).filter(IngresoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
-            gastos_c = db.session.query(
-                db.func.coalesce(db.func.sum(GastoCultivo.valor), 0.0)
-            ).filter(GastoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
-            produccion_c = db.session.query(
-                db.func.coalesce(db.func.sum(
-                    db.func.coalesce(IngresoCultivo.cantidad_canastillas * IngresoCultivo.peso_canastilla, 0.0)
-                    + db.func.coalesce(IngresoCultivo.kilos_sobrantes, 0.0)
-                ), 0.0)
-            ).filter(IngresoCultivo.idCultivo == c.idCultivo).scalar() or 0.0
-
-            total_hectareas += c.hectareas or 0.0
-            total_ingresos += ingresos_c
-            total_gastos += gastos_c
-            total_produccion += produccion_c
-
-            detalle_cultivos.append({
-                'nombre': c.nombre,
-                'hectareas': c.hectareas or 0.0,
-                'fecha_sembrado': c.fecha_sembrado,
-                'ingresos': ingresos_c,
-                'ingresos_fmt': formato_moneda(ingresos_c),
-                'gastos': gastos_c,
-                'gastos_fmt': formato_moneda(gastos_c),
-                'ganancias': ingresos_c - gastos_c,
-                'ganancias_fmt': formato_moneda(ingresos_c - gastos_c),
-                'produccion': produccion_c,
-            })
-
-        total_ganancias = total_ingresos - total_gastos
-        resumen.append({
-            'usuario': u,
-            'total_ingresos_fmt': formato_moneda(total_ingresos),
-            'total_gastos_fmt': formato_moneda(total_gastos),
-            'total_ganancias_fmt': formato_moneda(total_ganancias),
-            'num_cultivos': len(cultivos),
-            'total_hectareas': total_hectareas,
-            'total_ingresos': total_ingresos,
-            'total_gastos': total_gastos,
-            'total_ganancias': total_ingresos - total_gastos,
-            'total_produccion': total_produccion,
-            'cultivos': detalle_cultivos,
-        })
-
-    pagina_solicitada = request.args.get('pagina', 1, type=int)
-    resumen_pagina, pagina_actual, total_paginas = _paginar_usuarios(
-        resumen, pagina_solicitada, USUARIOS_POR_PAGINA
-    )
-
-    return render_template(
-        'auth/estadisticas_usuarios.html',
-        resumen=resumen_pagina,
-        pagina_actual=pagina_actual,
-        total_paginas=total_paginas,
-    )
+@bp.route('/usuarios/estadisticas')
+@login_required
+def estadisticas_usuarios():
+    """Antes mostraba los ingresos, gastos y ganancias de cada cultivador.
+    El administrador ya no ve cifras de nadie: esta dirección ahora lleva
+    al panel del administrador, que solo muestra porcentajes generales."""
+    return redirect(url_for('auth.dashboard'))
 
 
 @bp.route('/usuarios/<int:id>/activar', methods=['POST'])

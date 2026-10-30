@@ -1,9 +1,11 @@
 from flask import Flask
+from werkzeug.exceptions import HTTPException
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_compress import Compress
 from sqlalchemy import text
 import os
+import secrets
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -74,10 +76,20 @@ def create_app(config_extra=None):
     app.register_blueprint(ingresos_route.bp)
     app.register_blueprint(pagos_route.bp)
 
+    # Comandos de consola (flask <comando>): crear-admin, datos-demo, recordatorios.
+    from app import comandos
+    comandos.registrar(app)
+
     @app.errorhandler(Exception)
     def handle_error(e):
-        print(f"An error occurred: {str(e)}")
-        return {"error": str(e)}, 500
+        # Los errores normales de la web (404 no encontrado, 405, etc.) se
+        # responden tal cual. Los demás se anotan completos en el servidor,
+        # pero al visitante solo le llega un mensaje general: el detalle
+        # (rutas, consultas, nombres de tablas) le serviría a un atacante.
+        if isinstance(e, HTTPException):
+            return e
+        app.logger.exception('Error inesperado')
+        return {"error": "Ocurrió un error inesperado. Intenta de nuevo."}, 500
 
     with app.app_context():
         try:
@@ -97,6 +109,10 @@ def create_app(config_extra=None):
             ])
             _asegurar_columnas('actividades_cultivo', [
                 ('idCogida', 'INTEGER'),
+                # DEFAULT 1: las etiquetas que ya existían quedan como hechas,
+                # para que Don Pancho no pregunte por trabajos viejos.
+                ('hecha', 'BOOLEAN NOT NULL DEFAULT 1'),
+                ('fecha_hecha', 'DATETIME'),
             ])
             _asegurar_columnas('users', [
                 ('isAdmin', 'BOOLEAN DEFAULT 0'),
@@ -109,6 +125,7 @@ def create_app(config_extra=None):
                 # DEFAULT 1: las cuentas que ya existían no ven el recorrido
                 # de Don Pancho solas (ya conocen la página); las nuevas sí.
                 ('tutorial_visto', 'BOOLEAN NOT NULL DEFAULT 1'),
+                ('ultimo_acceso', 'DATETIME'),
             ])
             _asegurar_columnas('cultivos', [
                 ('idUser', 'INTEGER'),
@@ -119,10 +136,13 @@ def create_app(config_extra=None):
 
             admin = User.query.filter_by(nameUser='admin').first()
             if not admin:
-                # La contraseña inicial es débil a propósito: queda marcada
-                # para que se cambie apenas se inicie sesión por primera vez.
+                # Antes nacía con la contraseña '123': en una instalación nueva
+                # cualquiera podía entrar primero como admin. Ahora nace con
+                # una contraseña al azar que nadie conoce; para usarla hay que
+                # ponerle una con `flask --app run crear-admin`.
                 admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
-                admin.set_password('123')
+                admin.set_password(secrets.token_urlsafe(32))
+                print("Se creó la cuenta 'admin'. Ponle contraseña con: flask --app run crear-admin")
                 db.session.add(admin)
                 db.session.commit()
             else:

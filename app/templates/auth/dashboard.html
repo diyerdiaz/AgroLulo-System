@@ -97,14 +97,6 @@
             <span>Usuarios</span>
           </a>
         </li>
-        <li>
-          <a href="{{ url_for('auth.estadisticas_usuarios') }}" class="sidebar-link">
-            <div class="nav-icon-box" style="color: #ffb703; border-color: rgba(255, 183, 3, 0.3);">
-              <i class="bi bi-bar-chart-fill"></i>
-            </div>
-            <span>Estadísticas de Usuarios</span>
-          </a>
-        </li>
         {% endif %}
       </ul>
 
@@ -605,4 +597,7 @@
 
 <!-- Don Pancho Lulero: guía para usuarios nuevos y botón de ayuda -->
 {% include 'partials/don_pancho.html' %}
+
+<!-- Don Pancho pregunta por los trabajos del calendario sin marcar -->
+{% include 'partials/pendientes_don_pancho.html' %}
 {% endblock %}

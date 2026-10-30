@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.models.cultivo import Cultivo
 from app.models.actividad import ActividadCultivo, TIPOS_ACTIVIDAD, TIPOS_SELECCIONABLES
 from app.utils.helpers import cultivo_de_usuario
+from app.utils.recordatorios import pendientes_para_preguntar, posponer_pregunta
 from app import db
 import calendar
 import json
@@ -15,6 +16,14 @@ MESES_ES = [
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ]
 DIAS_SEMANA_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+
+@bp.app_context_processor
+def _pendientes_don_pancho():
+    # partials/pendientes_don_pancho.html la llama para saber si Don Pancho
+    # tiene que preguntar por trabajos sin marcar (solo se consulta en las
+    # páginas que incluyen ese partial).
+    return {'pendientes_don_pancho': pendientes_para_preguntar}
 
 
 @bp.route('/')
@@ -208,3 +217,51 @@ def eliminar_actividad(id, actividad_id):
 
     flash('Etiqueta eliminada.', 'info')
     return redirect(url_for('calendario.ver', id=id, year=year, month=month))
+
+
+def _quiere_json():
+    return request.accept_mimetypes.best == 'application/json' or request.is_json
+
+
+@bp.route('/<int:id>/actividad/<int:actividad_id>/hecha', methods=['POST'])
+@login_required
+def marcar_hecha(id, actividad_id):
+    """Marca un trabajo como hecho. Sirve el mismo día o cualquier día
+    después (si se le pasó y lo hizo tarde)."""
+    cultivo_de_usuario(id)
+    actividad = ActividadCultivo.query.filter_by(idActividad=actividad_id, idCultivo=id).first_or_404()
+    if not actividad.hecha:
+        actividad.hecha = True
+        actividad.fecha_hecha = datetime.utcnow()
+        db.session.commit()
+
+    if _quiere_json():
+        return jsonify(ok=True)
+    flash(f"¡Eso es, mano! '{TIPOS_ACTIVIDAD.get(actividad.tipo, TIPOS_ACTIVIDAD['otro'])['label']}' "
+          f"quedó marcado como hecho.", 'success')
+    return redirect(url_for('calendario.ver', id=id, year=actividad.fecha.year, month=actividad.fecha.month))
+
+
+@bp.route('/<int:id>/actividad/<int:actividad_id>/pendiente', methods=['POST'])
+@login_required
+def marcar_pendiente(id, actividad_id):
+    """Deshace "hecho" (por si se marcó por error)."""
+    cultivo_de_usuario(id)
+    actividad = ActividadCultivo.query.filter_by(idActividad=actividad_id, idCultivo=id).first_or_404()
+    actividad.hecha = False
+    actividad.fecha_hecha = None
+    db.session.commit()
+
+    if _quiere_json():
+        return jsonify(ok=True)
+    flash('Listo, quedó otra vez como pendiente.', 'info')
+    return redirect(url_for('calendario.ver', id=id, year=actividad.fecha.year, month=actividad.fecha.month))
+
+
+@bp.route('/pendientes/despues', methods=['POST'])
+@login_required
+def pendientes_despues():
+    """ "Después le digo": Don Pancho no vuelve a preguntar hoy (o hasta el
+    próximo inicio de sesión)."""
+    posponer_pregunta()
+    return jsonify(ok=True)

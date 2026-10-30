@@ -73,3 +73,27 @@ def test_admin_no_crea_cuenta_sin_correo_o_con_contrasena_debil(client, admin, d
     iniciar_sesion(client, admin)
     client.post('/usuarios/crear', data=datos)
     assert User.query.filter_by(nameUser='trabajador').first() is None
+
+
+# --- Lo que un atacante podría aprovechar ---
+
+def test_admin_nuevo_no_tiene_la_contrasena_123(app):
+    from app.models.users import User
+    admin = User.query.filter_by(nameUser='admin').one()
+    for adivinanza in ['123', 'admin', '1234', 'password', '']:
+        assert not admin.check_password(adivinanza)
+
+
+def test_errores_no_muestran_detalles_internos(app):
+    @app.route('/_prueba_error')
+    def _prueba_error():
+        raise RuntimeError('detalle secreto: tabla users, ruta /home/servidor')
+
+    respuesta = app.test_client().get('/_prueba_error')
+    assert respuesta.status_code == 500
+    assert b'detalle secreto' not in respuesta.data and b'/home/' not in respuesta.data
+
+
+def test_pagina_inexistente_responde_404_sin_detalles(client):
+    respuesta = client.get('/esta-pagina-no-existe')
+    assert respuesta.status_code == 404
