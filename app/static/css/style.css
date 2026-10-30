@@ -1756,3 +1756,158 @@ html:not(.js-animaciones) .landing-cta,
   .don-pancho-globo.entrando { animation: none; }
   .don-pancho-foco { transition: none; }
 }
+
+/* ================================================================
+   Panel del administrador (auth/dashboard_admin.html): minimalista,
+   solo porcentajes, sin cifras de los cultivadores.
+   ================================================================ */
+.panel-admin-seccion {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.panel-admin-seccion i { color: var(--neon-green); margin-right: 6px; }
+
+.panel-admin-aviso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(255, 183, 3, 0.08);
+  border: 1px solid rgba(255, 183, 3, 0.45);
+  color: var(--text-light);
+}
+.panel-admin-aviso > i { color: var(--gold-accent); font-size: 1.3rem; }
+.panel-admin-aviso .btn { padding: 0.4rem 1rem; font-size: 0.8rem; }
+
+.panel-admin-anillo-tarjeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+/* Anillo de porcentaje: --pct (0-100) y --color los pone la plantilla. */
+.panel-admin-anillo {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--color) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.08) 0);
+  position: relative;
+}
+.panel-admin-anillo::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: #0b120d;
+}
+.panel-admin-anillo span {
+  position: relative;
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: var(--text-light);
+}
+.panel-admin-anillo-texto { color: var(--text-muted); font-size: 0.92rem; line-height: 1.4; }
+.panel-admin-anillo-texto strong { color: var(--text-light); }
+
+.panel-admin-nota { color: var(--text-muted); font-size: 0.82rem; }
+.panel-admin-nota i { margin-right: 4px; }
+
+.panel-admin-barra { margin-bottom: 14px; color: var(--text-light); font-size: 0.92rem; }
+.panel-admin-barra strong { color: var(--neon-green); }
+.panel-admin-barra-fondo {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.panel-admin-barra-fondo > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--neon-green);
+  box-shadow: 0 0 10px var(--neon-green-glow);
+}
+
+.panel-admin-recientes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-light);
+}
+.panel-admin-recientes li:last-child { border-bottom: none; }
+.panel-admin-recientes li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+.panel-admin-recientes li a:hover,
+.panel-admin-recientes li a:focus-visible { background: rgba(57, 255, 20, 0.08); }
+.panel-admin-recientes .bi-person-circle { color: var(--neon-green); font-size: 1.2rem; }
+.panel-admin-recientes-flecha { color: var(--text-muted); }
+.panel-admin-recientes-nombre { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.panel-admin-recientes-cuando { margin-left: auto; color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+
+/* Ficha de un cultivador (auth/detalle_cultivador.html) */
+.ficha-estado {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.ficha-estado.gana { background: var(--neon-green); color: #000; }
+.ficha-estado.pierde { background: #ff4d4d; color: #000; }
+.ficha-estado.sin-datos { border: 1px solid rgba(255, 255, 255, 0.25); color: var(--text-muted); }
+
+.ficha-cultivo { border-top: 4px solid var(--color-cultivo, var(--neon-green)); }
+.ficha-cultivo-titulo { font-size: 1.15rem; font-weight: 800; color: var(--text-light); margin: 0; }
+.ficha-cultivo-datos { color: var(--text-muted); font-size: 0.85rem; }
+.ficha-pastel-titulo {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.ficha-pastel { position: relative; height: 230px; }
+.ficha-vacio {
+  height: 230px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+/* El contenido principal puede encogerse dentro del wrapper flexible: sin
+   esto, los gráficos de Chart.js lo empujan más ancho que la pantalla. */
+.main-content-lulo { min-width: 0; }
+
+/* Nombre del cultivador en Usuarios: abre su ficha en porcentajes */
+.link-ficha { text-decoration: none; }
+.link-ficha i { color: var(--neon-green); font-size: 0.8rem; margin-left: 2px; }
+.link-ficha:hover { color: var(--neon-green) !important; text-decoration: underline; }
