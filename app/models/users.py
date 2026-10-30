@@ -38,6 +38,12 @@ class User(db.Model, UserMixin):
     # agregaron las reglas quedan marcadas (ver _asegurar_columnas en
     # app/__init__.py); las cuentas nuevas ya nacen con contraseña segura.
     debe_cambiar_password = db.Column(db.Boolean, default=False, nullable=False)
+    # Si es False, al entrar al Dashboard aparece Don Pancho Lulero con el
+    # recorrido que explica cómo se usa la página. Pasa a True cuando la
+    # persona termina el recorrido o le da "Saltar". Las cuentas que ya
+    # existían antes de este campo quedan en True (ya conocen la página);
+    # igual pueden volver a verlo con el botón de ayuda de Don Pancho.
+    tutorial_visto = db.Column(db.Boolean, default=False, nullable=False)
 
     # loansUser = db.relationship("Loan", back_populates="user", lazy='dynamic')
     # computerLoansUser = db.relationship('ComputerLoan', back_populates='user', lazy='dynamic')

@@ -106,6 +106,9 @@ def create_app(config_extra=None):
                 # obligadas a cambiar su contraseña en el próximo inicio
                 # de sesión (se crearon antes de las reglas de seguridad).
                 ('debe_cambiar_password', 'BOOLEAN NOT NULL DEFAULT 1'),
+                # DEFAULT 1: las cuentas que ya existían no ven el recorrido
+                # de Don Pancho solas (ya conocen la página); las nuevas sí.
+                ('tutorial_visto', 'BOOLEAN NOT NULL DEFAULT 1'),
             ])
             _asegurar_columnas('cultivos', [
                 ('idUser', 'INTEGER'),
