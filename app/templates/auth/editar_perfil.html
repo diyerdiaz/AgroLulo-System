@@ -38,9 +38,11 @@
             <div class="nav-icon-box">
               <i class="bi bi-speedometer2"></i>
             </div>
-            <span>Dashboard General</span>
+            <span>{{ 'Panel del Administrador' if current_user.isAdmin else 'Dashboard General' }}</span>
           </a>
         </li>
+        {# El administrador no lleva cultivos: no ve las secciones del cultivador. #}
+        {% if not current_user.isAdmin %}
         <li>
           <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
             <div class="nav-icon-box">
@@ -81,6 +83,7 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% endif %}
         {% if current_user.isAdmin %}
         <li>
           <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link">
@@ -88,14 +91,6 @@
               <i class="bi bi-people-fill"></i>
             </div>
             <span>Usuarios</span>
-          </a>
-        </li>
-        <li>
-          <a href="{{ url_for('auth.estadisticas_usuarios') }}" class="sidebar-link">
-            <div class="nav-icon-box" style="color: #ffb703; border-color: rgba(255, 183, 3, 0.3);">
-              <i class="bi bi-bar-chart-fill"></i>
-            </div>
-            <span>Estadísticas de Usuarios</span>
           </a>
         </li>
         {% endif %}

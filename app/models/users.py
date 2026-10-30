@@ -44,6 +44,10 @@ class User(db.Model, UserMixin):
     # existían antes de este campo quedan en True (ya conocen la página);
     # igual pueden volver a verlo con el botón de ayuda de Don Pancho.
     tutorial_visto = db.Column(db.Boolean, default=False, nullable=False)
+    # Última vez que la cuenta usó la plataforma (UTC). Se actualiza al
+    # iniciar sesión y, como mucho cada 5 minutos, mientras navega. Lo usa
+    # el panel del administrador para ver qué tan activa está la gente.
+    ultimo_acceso = db.Column(db.DateTime, nullable=True)
 
     # loansUser = db.relationship("Loan", back_populates="user", lazy='dynamic')
     # computerLoansUser = db.relationship('ComputerLoan', back_populates='user', lazy='dynamic')

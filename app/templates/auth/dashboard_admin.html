@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}Panel del Administrador - AgroLulo{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+{#
+  Panel del administrador: minimalista y SIN cifras de los cultivadores.
+  Solo porcentajes generales de la plataforma y quién ha entrado hace poco.
+  Los datos los arma utils/panel_admin.py (calcular_panel).
+#}
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+<canvas id="bgCanvas"></canvas>
+
+<div class="dashboard-wrapper dashboard-wrapper-auto">
+
+  {% include 'partials/menu_admin.html' %}
+
+  <main class="main-content-lulo main-content-lulo-auto">
+
+    <div class="mobile-nav-header">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">Admin</span></span>
+      </div>
+    </div>
+
+    {% include 'partials/notificaciones.html' %}
+
+    <!-- Encabezado -->
+    <div class="dash-card mb-4">
+      <div class="lulo-badge mb-2"><i class="bi bi-shield-lock-fill"></i> Panel del Administrador</div>
+      <h1 class="fw-bold text-white mb-2 fs-2">¿Cómo va <span>AgroLulo</span>?</h1>
+      <p class="text-muted mb-0">
+        Solo porcentajes generales de la plataforma. Aquí no se ve la plata ni las cifras de ningún cultivador.
+      </p>
+    </div>
+
+    {% if panel.esperando_activacion %}
+    <div class="panel-admin-aviso mb-4">
+      <i class="bi bi-hourglass-split"></i>
+      <span>
+        {{ 'Hay 1 cuenta esperando' if panel.esperando_activacion == 1 else 'Hay ' ~ panel.esperando_activacion ~ ' cuentas esperando' }}
+        que la actives para poder entrar.
+      </span>
+      <a href="{{ url_for('auth.usuarios') }}" class="btn btn-sm btn-neon-primary ms-auto">Ir a Usuarios</a>
+    </div>
+    {% endif %}
+
+    {% if not panel.hay_cultivadores %}
+    <div class="dash-card text-center py-5">
+      <i class="bi bi-people fs-1" style="color: var(--neon-green);"></i>
+      <p class="text-muted mt-2 mb-0">Todavía no hay cultivadores registrados en la plataforma.</p>
+    </div>
+    {% else %}
+
+    <!-- Rentabilidad -->
+    <h2 class="panel-admin-seccion"><i class="bi bi-graph-up-arrow"></i> ¿Es rentable?</h2>
+    {% if panel.hay_datos_rentabilidad %}
+    <div class="row g-4 mb-2">
+      <div class="col-md-4">
+        <div class="dash-card panel-admin-anillo-tarjeta h-100">
+          <div class="panel-admin-anillo" style="--pct: {{ panel.pct_cultivadores_rentables }}; --color: var(--neon-green);">
+            <span>{{ panel.pct_cultivadores_rentables }}%</span>
+          </div>
+          <div class="panel-admin-anillo-texto">de los cultivadores <strong>gana más de lo que gasta</strong></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dash-card panel-admin-anillo-tarjeta h-100">
+          <div class="panel-admin-anillo" style="--pct: {{ panel.pct_cultivos_rentables }}; --color: #4cc9f0;">
+            <span>{{ panel.pct_cultivos_rentables }}%</span>
+          </div>
+          <div class="panel-admin-anillo-texto">de los cultivos <strong>está dando ganancia</strong></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        {% set margen = panel.margen_general %}
+        <div class="dash-card panel-admin-anillo-tarjeta h-100">
+          {% if margen is none %}
+          <div class="panel-admin-anillo" style="--pct: 0; --color: #ffb703;"><span>—</span></div>
+          <div class="panel-admin-anillo-texto"><strong>rentabilidad general</strong>: todavía no hay ventas registradas</div>
+          {% else %}
+          <div class="panel-admin-anillo" style="--pct: {{ [margen|abs, 100]|min }}; --color: {{ '#ff4d4d' if margen < 0 else '#ffb703' }};">
+            <span>{{ margen }}%</span>
+          </div>
+          <div class="panel-admin-anillo-texto">
+            {% if margen >= 0 %}
+            <strong>rentabilidad general</strong>: de lo que venden, ese porcentaje queda de ganancia
+            {% else %}
+            <strong>la plataforma va en pérdida</strong>: se gasta más de lo que se vende
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <p class="panel-admin-nota mb-4">
+      <i class="bi bi-info-circle"></i>
+      {{ panel.pct_sin_datos }}% de los cultivadores todavía no registra ingresos ni gastos (no cuentan en estos porcentajes).
+    </p>
+    {% else %}
+    <div class="dash-card text-center text-muted mb-4">
+      Todavía ningún cultivador ha registrado ingresos o gastos. Cuando lo hagan, aquí verás qué tan rentable es la plataforma.
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+      <!-- Actividad -->
+      <div class="col-lg-6">
+        <h2 class="panel-admin-seccion"><i class="bi bi-activity"></i> Actividad en la plataforma</h2>
+        <div class="dash-card h-100">
+          <p class="text-muted mb-3" style="font-size: 0.9rem;">De las cuentas activas, cuántas han entrado…</p>
+          {% for a in panel.actividad %}
+          <div class="panel-admin-barra">
+            <div class="d-flex justify-content-between mb-1">
+              <span>{{ a.titulo }}</span><strong>{{ a.pct }}%</strong>
+            </div>
+            <div class="panel-admin-barra-fondo"><div style="width: {{ a.pct }}%;"></div></div>
+          </div>
+          {% endfor %}
+          <p class="panel-admin-nota mb-0 mt-3">
+            <i class="bi bi-moon-stars"></i> {{ panel.pct_nunca_entraron }}% de las cuentas activas nunca ha entrado.
+          </p>
+        </div>
+      </div>
+
+      <!-- Interacción reciente -->
+      <div class="col-lg-6">
+        <h2 class="panel-admin-seccion"><i class="bi bi-clock-history"></i> Interacción reciente</h2>
+        <div class="dash-card h-100">
+          {% if panel.recientes %}
+          <ul class="panel-admin-recientes list-unstyled mb-0">
+            {% for r in panel.recientes %}
+            <li>
+              <a href="{{ url_for('auth.ficha_cultivador', id=r.id) }}" title="Ver cómo ha usado {{ r.nombre }} la plataforma">
+                <i class="bi bi-person-circle"></i>
+                <span class="panel-admin-recientes-nombre">{{ r.nombre }}</span>
+                {% if not r.activo %}<span class="badge bg-secondary">Bloqueada</span>{% endif %}
+                <span class="panel-admin-recientes-cuando">{{ r.cuando }}</span>
+                <i class="bi bi-chevron-right panel-admin-recientes-flecha"></i>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-0">Todavía nadie ha entrado a la plataforma.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<button type="button" id="btnThemeToggle" class="theme-lightning-btn" onclick="cycleThemeColor()"
+  aria-label="Cambiar Tema de Color" title="Cambiar Tema de Color">
+  <i class="bi bi-lightning-charge-fill"></i>
+</button>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebarLulo').classList.toggle('expanded');
+  }
+
+  const themesSequence = ['green', 'blue', 'orange'];
+  function cycleThemeColor() {
+    const currentTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    const nextTheme = themesSequence[(themesSequence.indexOf(currentTheme) + 1) % themesSequence.length];
+    setThemeColor(nextTheme);
+  }
+
+  function setThemeColor(themeName) {
+    document.body.classList.remove('theme-blue', 'theme-orange');
+    if (themeName !== 'green') document.body.classList.add('theme-' + themeName);
+    localStorage.setItem('agrolulo_theme', themeName);
+    if (window.updateCanvasTheme) window.updateCanvasTheme(themeName);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setThemeColor(localStorage.getItem('agrolulo_theme') || 'green');
+  });
+</script>
+
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}
