@@ -4,7 +4,7 @@ from datetime import datetime, date
 from app.models.cultivo import Cultivo
 from app.models.ingreso import IngresoCultivo, TIPOS_INGRESO, TIPOS_LULO_COGIDA
 from app.models.actividad import ActividadCultivo
-from app.utils.helpers import formato_moneda, cultivo_de_usuario
+from app.utils.helpers import formato_moneda, cultivo_de_usuario, numero_valido
 from app.utils.cosechas import grupo_de, filas_de_cosecha, paginar
 from app import db
 
@@ -232,7 +232,7 @@ def registrar_pago(id):
     cultivo_de_usuario(id)
 
     try:
-        monto = float(request.form.get('monto', 0) or 0)
+        monto = numero_valido(request.form.get('monto', 0) or 0)
     except ValueError:
         monto = 0.0
 
@@ -348,7 +348,7 @@ def pago_actualizar(id, grupo_id):
         return redirect(url_for('pagos.ver', id=id))
 
     try:
-        nuevo_monto = float(request.form.get('monto', 0) or 0)
+        nuevo_monto = numero_valido(request.form.get('monto', 0) or 0)
         if nuevo_monto < 0:
             raise ValueError()
     except ValueError:

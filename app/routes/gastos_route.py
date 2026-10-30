@@ -4,7 +4,7 @@ from app.models.cultivo import Cultivo
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.ingreso import IngresoCultivo
 from app.models.actividad import ActividadCultivo
-from app.utils.helpers import formato_moneda, cultivo_de_usuario
+from app.utils.helpers import formato_moneda, cultivo_de_usuario, numero_valido
 from app import db
 from datetime import datetime
 
@@ -103,7 +103,7 @@ def agregar(id):
         return redirect(url_for('gastos.ver', id=id))
 
     try:
-        valor = float(valor_raw)
+        valor = numero_valido(valor_raw)
         if valor <= 0:
             raise ValueError()
     except ValueError:
@@ -170,7 +170,7 @@ def actualizar_gasto(id, gasto_id):
         return redirect(url_for('gastos.editar_gasto', id=id, gasto_id=gasto_id))
 
     try:
-        valor = float(valor_raw)
+        valor = numero_valido(valor_raw)
         if valor <= 0:
             raise ValueError()
     except ValueError:
