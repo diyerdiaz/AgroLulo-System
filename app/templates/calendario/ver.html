@@ -309,14 +309,35 @@
               <i class="bi {{ a.icon }}" style="color: {{ a.color }}; font-size: 1.1rem; margin-top: 2px;"></i>
               <div>
                 <div class="fw-bold text-white" style="font-size: 0.88rem;">
-                  {{ a.label }}
+                  <span class="{% if a.hecha %}etiqueta-hecha-texto{% endif %}">{{ a.label }}</span>
                   <span class="text-muted fw-normal">· {{ a.fecha.strftime('%d/%m/%Y') }}</span>
+                  {% if a.seguimiento %}
+                    {% if a.hecha %}<span class="etiqueta-estado hecha">✔ Hecho</span>
+                    {% elif a.fecha <= hoy %}<span class="etiqueta-estado pendiente">Pendiente</span>
+                    {% else %}<span class="etiqueta-estado programada">Programado</span>{% endif %}
+                  {% endif %}
                 </div>
                 {% if a.nota %}
                 <div class="text-muted" style="font-size: 0.8rem;">{{ a.nota }}</div>
                 {% endif %}
               </div>
             </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+            {% if a.seguimiento %}
+              {% if a.hecha %}
+              <form method="POST" action="{{ url_for('calendario.marcar_pendiente', id=cultivo.idCultivo, actividad_id=a.id) }}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Desmarcar (volver a pendiente)">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </form>
+              {% else %}
+              <form method="POST" action="{{ url_for('calendario.marcar_hecha', id=cultivo.idCultivo, actividad_id=a.id) }}">
+                <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" title="Marcar como hecho">
+                  <i class="bi bi-check-lg"></i> Listo
+                </button>
+              </form>
+              {% endif %}
+            {% endif %}
             {% if a.eliminable %}
             <form method="POST" action="{{ url_for('calendario.eliminar_actividad', id=cultivo.idCultivo, actividad_id=a.id) }}"
               onsubmit="return confirm('¿Eliminar esta etiqueta del calendario?');">
@@ -327,6 +348,7 @@
               </button>
             </form>
             {% endif %}
+            </div>
           </div>
           {% endfor %}
         </div>
@@ -340,6 +362,9 @@
     </div>
   </div>
 </div>
+
+<!-- Formulario oculto reutilizado para marcar una etiqueta como hecha / pendiente -->
+<form id="formMarcarActividad" method="POST" class="d-none"></form>
 
 <!-- Formulario oculto reutilizado para eliminar una etiqueta -->
 <form id="formEliminarActividad" method="POST" class="d-none">
@@ -379,6 +404,13 @@
   // ===== Etiquetas del calendario (fumigación, trabajo, cosecha, etc.) =====
   const actividadesPorDia = {{ actividades_por_dia_json|safe }};
   const urlEliminarBase = "{{ url_for('calendario.ver', id=cultivo.idCultivo) }}/actividad";
+  const hoyIso = "{{ hoy.strftime('%Y-%m-%d') }}";
+
+  function marcarActividad(actividadId, accion) {
+    const form = document.getElementById('formMarcarActividad');
+    form.action = urlEliminarBase + '/' + actividadId + '/' + accion;
+    form.submit();
+  }
   let modalDiaInstance = null;
 
   function pintarPuntosDelDia(fechaIso) {
@@ -445,10 +477,41 @@
         izquierda.className = 'd-flex align-items-start gap-2';
         izquierda.innerHTML =
           '<i class="bi ' + a.icon + '" style="color:' + a.color + '; font-size:1.1rem; margin-top:2px;"></i>' +
-          '<div><div class="fw-bold text-white" style="font-size:0.88rem;">' + a.label + '</div>' +
-          (a.nota ? '<div class="text-muted" style="font-size:0.8rem;">' + a.nota + '</div>' : '') +
-          '</div>';
+          '<div><div class="fw-bold text-white" style="font-size:0.88rem;"><span class="js-label"></span></div>' +
+          '<div class="text-muted js-nota" style="font-size:0.8rem;"></div></div>';
+        // La nota la escribe el usuario: se pone como texto, nunca como HTML.
+        izquierda.querySelector('.js-label').textContent = a.label;
+        if (a.hecha) izquierda.querySelector('.js-label').classList.add('etiqueta-hecha-texto');
+        if (a.nota) izquierda.querySelector('.js-nota').textContent = a.nota;
+        else izquierda.querySelector('.js-nota').remove();
+        if (a.seguimiento) {
+          const estado = document.createElement('span');
+          estado.className = 'etiqueta-estado ' + (a.hecha ? 'hecha' : (fechaIso <= hoyIso ? 'pendiente' : 'programada'));
+          estado.textContent = a.hecha ? '✔ Hecho' : (fechaIso <= hoyIso ? 'Pendiente' : 'Programado');
+          izquierda.querySelector('.fw-bold').appendChild(estado);
+        }
         item.appendChild(izquierda);
+
+        const acciones = document.createElement('div');
+        acciones.className = 'd-flex gap-1 flex-shrink-0';
+        item.appendChild(acciones);
+
+        if (a.seguimiento) {
+          const btnEstado = document.createElement('button');
+          btnEstado.type = 'button';
+          if (a.hecha) {
+            btnEstado.className = 'btn btn-sm btn-outline-secondary py-0 px-2';
+            btnEstado.title = 'Desmarcar (volver a pendiente)';
+            btnEstado.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+            btnEstado.onclick = () => marcarActividad(a.id, 'pendiente');
+          } else {
+            btnEstado.className = 'btn btn-sm btn-outline-success py-0 px-2';
+            btnEstado.title = 'Marcar como hecho';
+            btnEstado.innerHTML = '<i class="bi bi-check-lg"></i> Listo';
+            btnEstado.onclick = () => marcarActividad(a.id, 'hecha');
+          }
+          acciones.appendChild(btnEstado);
+        }
 
         if (a.eliminable) {
           const btn = document.createElement('button');
@@ -456,7 +519,7 @@
           btn.className = 'btn btn-sm btn-outline-danger py-0 px-2';
           btn.innerHTML = '<i class="bi bi-x-lg"></i>';
           btn.onclick = () => eliminarActividad(a.id);
-          item.appendChild(btn);
+          acciones.appendChild(btn);
         }
 
         lista.appendChild(item);
@@ -473,4 +536,8 @@
 </script>
 
 <script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+
+<!-- Don Pancho pregunta por los trabajos sin marcar (recarga para que se vea el chulo) -->
+{% set recargar_al_marcar = True %}
+{% include 'partials/pendientes_don_pancho.html' %}
 {% endblock %}

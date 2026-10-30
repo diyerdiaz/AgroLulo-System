@@ -141,8 +141,12 @@ def _crear_lote(r, usuario, nombre, hoy, suerte):
         fecha = hoy + timedelta(days=r.randint(-150, 20))
         if fecha < sembrado:
             continue
+        # Lo viejo ya se hizo; solo lo de los últimos días queda sin marcar,
+        # para que Don Pancho no pregunte por meses de trabajo atrasado.
+        hecha = (hoy - fecha).days > 5
         db.session.add(ActividadCultivo(idCultivo=lote.idCultivo, tipo=tipo, fecha=fecha,
-                                        nota=r.choice(NOTAS_TRABAJO[tipo])))
+                                        nota=r.choice(NOTAS_TRABAJO[tipo]), hecha=hecha,
+                                        fecha_hecha=datetime.combine(fecha, datetime.min.time()) if hecha else None))
     return lote
 
 
