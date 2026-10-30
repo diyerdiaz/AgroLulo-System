@@ -2,7 +2,6 @@ import pytest
 from datetime import date
 
 from app import create_app, db
-from app.utils import seguridad
 
 
 @pytest.fixture
@@ -16,10 +15,6 @@ def app():
         # La protección se prueba aparte en tests/test_csrf.py.
         'WTF_CSRF_ENABLED': False,
     })
-    # El bloqueo por intentos fallidos se guarda en memoria del módulo:
-    # se limpia para que un test no afecte al siguiente.
-    seguridad._intentos_fallidos.clear()
-    seguridad._bloqueado_hasta.clear()
     with app.app_context():
         yield app
         db.session.remove()

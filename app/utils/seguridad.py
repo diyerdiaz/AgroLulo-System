@@ -1,8 +1,10 @@
 import re
-from collections import defaultdict
-from time import time
+from datetime import datetime, timedelta, timezone
 
 from flask import current_app, request
+
+from app import db
+from app.models.intento_acceso import IntentoAcceso
 
 CONTRASENA_MIN = 8
 CONTRASENA_MAX = 128
@@ -64,52 +66,52 @@ def agregar_cabeceras_seguridad(respuesta):
     return respuesta
 
 
-# --- Bloqueo por intentos fallidos de inicio de sesión (fuerza bruta) ---
-# Guarda en memoria, por dirección IP, los intentos fallidos recientes.
-# Como el servidor corre con un solo worker de Gunicorn (ver Dockerfile),
-# un diccionario en memoria es suficiente: no hace falta una base de
-# datos ni Redis aparte para esto.
-INTENTOS_MAXIMOS = 5
-VENTANA_SEGUNDOS = 15 * 60  # 15 minutos
-BLOQUEO_SEGUNDOS = 15 * 60  # 15 minutos bloqueado tras agotar los intentos
+# --- Límites de intentos para frenar ataques automáticos ---
+# accion: (máximo de intentos, segundos). Al llegar al máximo, esa IP o cuenta
+# queda bloqueada hasta que pase ese tiempo desde su último intento.
+LIMITES = {
+    'login': (5, 15 * 60),
+    'registro': (5, 60 * 60),
+    'recuperar': (10, 60 * 60),
+    'codigo': (10, 24 * 60 * 60),
+}
+DIAS_CONSERVAR_INTENTOS = 2
 
-_intentos_fallidos = defaultdict(list)  # ip -> lista de timestamps de intentos fallidos
-_bloqueado_hasta = {}  # ip -> timestamp hasta el que queda bloqueada
+
+def _ahora():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def ip_solicitante():
     return request.remote_addr or 'desconocida'
 
 
-def segundos_bloqueo_restante(ip):
-    """Si la IP sigue bloqueada, devuelve cuántos segundos le faltan (>0).
-    Si ya no está bloqueada, devuelve 0."""
-    vence = _bloqueado_hasta.get(ip)
-    if not vence:
+def segundos_bloqueo_restante(clave, accion='login'):
+    """Si la IP o cuenta sigue bloqueada para esa acción, devuelve cuántos
+    segundos le faltan (>0). Si no está bloqueada, devuelve 0."""
+    maximo, segundos = LIMITES[accion]
+    ahora = _ahora()
+    intentos = (IntentoAcceso.query
+                .filter(IntentoAcceso.accion == accion, IntentoAcceso.clave == clave,
+                        IntentoAcceso.fecha > ahora - timedelta(seconds=segundos))
+                .order_by(IntentoAcceso.fecha.desc()).limit(maximo).all())
+    if len(intentos) < maximo:
         return 0
-    restante = vence - time()
-    if restante <= 0:
-        _bloqueado_hasta.pop(ip, None)
-        return 0
-    return restante
+    return max(0, segundos - (ahora - intentos[0].fecha).total_seconds())
 
 
-def registrar_intento_fallido(ip):
-    """Anota un intento fallido y, si ya se llegó al máximo permitido
-    dentro de la ventana de tiempo, bloquea esa IP por un rato."""
-    ahora = time()
-    intentos = _intentos_fallidos[ip]
-    intentos.append(ahora)
-    # Descarta intentos viejos que ya salieron de la ventana de tiempo.
-    intentos[:] = [t for t in intentos if ahora - t <= VENTANA_SEGUNDOS]
-
-    if len(intentos) >= INTENTOS_MAXIMOS:
-        _bloqueado_hasta[ip] = ahora + BLOQUEO_SEGUNDOS
-        intentos.clear()
+def registrar_intento(clave, accion='login'):
+    """Anota un intento y aprovecha para borrar los que ya no sirven."""
+    ahora = _ahora()
+    IntentoAcceso.query.filter(
+        IntentoAcceso.fecha < ahora - timedelta(days=DIAS_CONSERVAR_INTENTOS)
+    ).delete(synchronize_session=False)
+    db.session.add(IntentoAcceso(accion=accion, clave=clave, fecha=ahora))
+    db.session.commit()
 
 
-def limpiar_intentos(ip):
-    """Se llama tras un inicio de sesión exitoso: borra el historial de
-    intentos fallidos de esa IP."""
-    _intentos_fallidos.pop(ip, None)
-    _bloqueado_hasta.pop(ip, None)
+def limpiar_intentos(clave, accion='login'):
+    """Se llama cuando la persona demostró ser quien dice ser: borra sus
+    intentos fallidos de esa acción."""
+    IntentoAcceso.query.filter_by(accion=accion, clave=clave).delete(synchronize_session=False)
+    db.session.commit()

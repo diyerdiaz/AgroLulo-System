@@ -10,7 +10,7 @@ from app.utils.panel_admin import calcular_panel, detalle_cultivador
 from app.utils.correo import correo_valido, enviar_codigo_recuperacion
 from app.utils.seguridad import (
     errores_contrasena, mensaje_contrasena_invalida,
-    ip_solicitante, segundos_bloqueo_restante, registrar_intento_fallido, limpiar_intentos,
+    ip_solicitante, segundos_bloqueo_restante, registrar_intento, limpiar_intentos,
 )
 from app import db
 from datetime import date, datetime, timedelta, timezone
@@ -67,7 +67,7 @@ def login():
             flash(f"¡Bienvenido de nuevo, {user.nameUser}! Acceso concedido.", "success")
             return redirect(url_for('auth.dashboard'))
 
-        registrar_intento_fallido(ip)
+        registrar_intento(ip)
         flash('Credenciales inválidas. Usuario o contraseña incorrectos.', 'danger')
     
     if current_user.is_authenticated:
