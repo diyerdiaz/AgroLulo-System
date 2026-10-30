@@ -1,0 +1,49 @@
+{#
+  Don Pancho Lulero: el guía que le explica la página a quien entra por
+  primera vez. Se incluye en el Dashboard General. La lógica del recorrido
+  vive en static/js/don-pancho.js y los estilos en static/css/style.css.
+
+  Cada paso señala un elemento marcado con data-tour="..." en el Dashboard.
+  Si ese elemento no existe (por ejemplo, porque solo lo ve el admin), el
+  paso sale en el centro de la pantalla sin señalar nada.
+#}
+<div id="donPancho"
+     class="don-pancho"
+     data-mostrar="{{ '1' if not current_user.tutorial_visto else '0' }}"
+     data-url-visto="{{ url_for('auth.tutorial_visto') }}"
+     data-img-saludando="{{ url_for('static', filename='img/don-pancho/saludando.webp') }}"
+     data-img-senalando="{{ url_for('static', filename='img/don-pancho/senalando.webp') }}"
+     data-img-pensando="{{ url_for('static', filename='img/don-pancho/pensando.webp') }}"
+     hidden>
+  <div class="don-pancho-bloqueo"></div>
+  <div class="don-pancho-foco"></div>
+
+  <div class="don-pancho-globo" role="dialog" aria-modal="true" aria-labelledby="donPanchoTitulo" aria-describedby="donPanchoTexto">
+    <img class="don-pancho-img" src="{{ url_for('static', filename='img/don-pancho/saludando.webp') }}" alt="Don Pancho Lulero" width="303" height="508">
+    <div class="don-pancho-cuerpo">
+      <div class="don-pancho-nombre">Don Pancho Lulero</div>
+      <h2 id="donPanchoTitulo" class="don-pancho-titulo"></h2>
+      <p id="donPanchoTexto" class="don-pancho-texto"></p>
+      <div class="don-pancho-pie">
+        <span class="don-pancho-progreso" aria-live="polite"></span>
+        <div class="don-pancho-botones">
+          <button type="button" class="btn btn-sm btn-link don-pancho-saltar" data-accion="saltar">Saltar</button>
+          <button type="button" class="btn btn-sm btn-neon-outline" data-accion="anterior">
+            <i class="bi bi-arrow-left"></i> Anterior
+          </button>
+          <button type="button" class="btn btn-sm btn-neon-primary" data-accion="siguiente">
+            Siguiente <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Botón para volver a llamar a Don Pancho cuando se quiera -->
+<button type="button" id="btnDonPancho" class="don-pancho-ayuda" data-tour="ayuda"
+        aria-label="Ayuda: que Don Pancho le explique la página" title="¿Ayuda? Llame a Don Pancho">
+  <img src="{{ url_for('static', filename='img/don-pancho/cara.webp') }}" alt="" width="128" height="128">
+</button>
+
+<script src="{{ url_for('static', filename='js/don-pancho.js') }}"></script>

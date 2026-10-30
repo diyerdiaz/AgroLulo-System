@@ -413,6 +413,18 @@ def dashboard():
         chart_data=chart_data,
     )
 
+
+@bp.route('/tutorial/visto', methods=['POST'])
+@login_required
+def tutorial_visto():
+    """Lo llama Don Pancho (static/js/don-pancho.js) cuando la persona termina
+    el recorrido o le da "Saltar", para que no le vuelva a salir solo."""
+    if not current_user.tutorial_visto:
+        current_user.tutorial_visto = True
+        db.session.commit()
+    return '', 204
+
+
 @bp.route('/logout')
 @login_required
 def logout():
