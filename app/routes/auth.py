@@ -300,6 +300,7 @@ def cambiar_contrasena():
         current_user.set_password(nueva_password)
         current_user.debe_cambiar_password = False
         db.session.commit()
+        login_user(current_user._get_current_object())  # esta sesión sigue abierta; las otras se cierran
         flash('¡Listo! Tu contraseña se actualizó. Ya puedes usar AgroLulo con normalidad.', 'success')
         return redirect(url_for('auth.dashboard'))
 
@@ -524,6 +525,7 @@ def editar_perfil():
         current_user.nameUser = nuevo_nombre
         current_user.emailUser = nuevo_correo or None
         db.session.commit()
+        login_user(current_user._get_current_object())  # esta sesión sigue abierta; las otras se cierran
         flash('Tus datos se actualizaron correctamente.', 'success')
         return redirect(url_for('auth.editar_perfil'))
 
