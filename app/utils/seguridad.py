@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from time import time
 
-from flask import request
+from flask import current_app, request
 
 CONTRASENA_MIN = 8
 CONTRASENA_MAX = 128
@@ -35,6 +35,33 @@ def errores_contrasena(contrasena, nombre_usuario=None):
 def mensaje_contrasena_invalida(errores):
     """Arma un solo mensaje claro a partir de la lista de reglas que faltan."""
     return 'La contraseña debe ' + ', '.join(errores[:-1]) + (' y ' if len(errores) > 1 else '') + errores[-1] + '.'
+
+
+# --- Cabeceras de seguridad que acompañan cada respuesta ---
+# 'unsafe-inline' sigue en la lista porque las plantillas traen <script> y
+# onclick dentro del HTML. Todo lo demás solo puede venir de esta misma página.
+POLITICA_CONTENIDO = '; '.join([
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+])
+
+
+def agregar_cabeceras_seguridad(respuesta):
+    """Le dice al navegador qué no debe permitir con esta página."""
+    respuesta.headers['Content-Security-Policy'] = POLITICA_CONTENIDO
+    respuesta.headers['X-Frame-Options'] = 'DENY'
+    respuesta.headers['X-Content-Type-Options'] = 'nosniff'
+    respuesta.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if current_app.config.get('DETRAS_DE_HTTPS'):
+        respuesta.headers['Strict-Transport-Security'] = 'max-age=31536000'
+    return respuesta
 
 
 # --- Bloqueo por intentos fallidos de inicio de sesión (fuerza bruta) ---

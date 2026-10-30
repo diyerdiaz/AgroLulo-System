@@ -14,6 +14,7 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:?Falta MAIL_PASSWORD en el archivo .env}
       MAIL_SENDER: ${MAIL_SENDER:-}
       APP_URL: ${APP_URL:-http://127.0.0.1:5000}
+      DETRAS_DE_HTTPS: ${DETRAS_DE_HTTPS:-0}
     ports:
       - "5000:5000"
     volumes:
