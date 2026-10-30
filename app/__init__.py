@@ -71,10 +71,6 @@ def create_app(config_extra=None):
         return user
 
     # Register blueprints
-    # NOTA: el blueprint "users_route_async" (rutas /UserAsync/...) se quitó
-    # de aquí porque era una API JSON que ninguna página de AgroLulo llegó a
-    # usar nunca (no había ningún botón, formulario ni script que la
-    # llamara); era código muerto que no cumplía ninguna función real.
     from app.routes import (
         users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route,
         landing_route

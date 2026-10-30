@@ -727,12 +727,3 @@ def usuario_eliminar(id):
 
     flash(f"La cuenta '{nombre}' y todos sus datos fueron eliminados permanentemente.", 'info')
     return redirect(url_for('auth.usuarios'))
-
-@bp.route('/pruebajs')
-def pruebajs():
-    example_data = {
-        'title': 'Bienvenido a Flet',
-        'message': 'Este es un mensaje desde Flask.'
-    }
-    import json
-    return json.dumps(example_data)
