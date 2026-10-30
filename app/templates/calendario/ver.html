@@ -408,7 +408,7 @@
   });
 
   // ===== Etiquetas del calendario (fumigación, trabajo, cosecha, etc.) =====
-  const actividadesPorDia = {{ actividades_por_dia_json|safe }};
+  const actividadesPorDia = {{ actividades_por_dia|tojson }};
   const urlEliminarBase = "{{ url_for('calendario.ver', id=cultivo.idCultivo) }}/actividad";
   const hoyIso = "{{ hoy.strftime('%Y-%m-%d') }}";
 
