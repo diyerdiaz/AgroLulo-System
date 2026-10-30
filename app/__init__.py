@@ -74,6 +74,10 @@ def create_app(config_extra=None):
     app.register_blueprint(ingresos_route.bp)
     app.register_blueprint(pagos_route.bp)
 
+    # Comandos de consola (flask <comando>), por ejemplo los recordatorios.
+    from app import comandos
+    comandos.registrar(app)
+
     @app.errorhandler(Exception)
     def handle_error(e):
         print(f"An error occurred: {str(e)}")
@@ -97,6 +101,10 @@ def create_app(config_extra=None):
             ])
             _asegurar_columnas('actividades_cultivo', [
                 ('idCogida', 'INTEGER'),
+                # DEFAULT 1: las etiquetas que ya existían quedan como hechas,
+                # para que Don Pancho no pregunte por trabajos viejos.
+                ('hecha', 'BOOLEAN NOT NULL DEFAULT 1'),
+                ('fecha_hecha', 'DATETIME'),
             ])
             _asegurar_columnas('users', [
                 ('isAdmin', 'BOOLEAN DEFAULT 0'),

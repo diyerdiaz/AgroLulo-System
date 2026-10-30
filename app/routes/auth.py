@@ -57,6 +57,9 @@ def login():
                 user.debe_cambiar_password = True
                 db.session.commit()
             login_user(user)
+            # Al entrar de nuevo, Don Pancho vuelve a preguntar por los
+            # trabajos sin marcar aunque antes le hubieran dicho "Después".
+            session.pop('pendientes_pospuestos', None)
             if user.debe_cambiar_password:
                 return redirect(url_for('auth.cambiar_contrasena'))
             flash(f"¡Bienvenido de nuevo, {user.nameUser}! Acceso concedido.", "success")

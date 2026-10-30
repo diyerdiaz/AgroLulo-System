@@ -1,0 +1,64 @@
+{#
+  Don Pancho pregunta por los trabajos del calendario que ya tenían que
+  hacerse (hoy o días anteriores) y todavía no se han marcado como hechos.
+  La lista sale de utils/recordatorios.py (pendientes_para_preguntar) y la
+  lógica de los botones vive en static/js/pendientes-don-pancho.js.
+
+  Si la página necesita recargarse después de marcar algo (por ejemplo el
+  calendario, para que se vea el chulo), antes del include se pone:
+    {% set recargar_al_marcar = True %}
+#}
+{% set pendientes = pendientes_don_pancho() %}
+{% if pendientes %}
+<div id="panchoPregunta" class="pancho-pregunta"
+     data-url-despues="{{ url_for('calendario.pendientes_despues') }}"
+     data-recargar="{{ '1' if recargar_al_marcar else '0' }}">
+  <div class="pancho-pregunta-fondo"></div>
+
+  <div class="pancho-pregunta-tarjeta" role="dialog" aria-modal="true" aria-labelledby="panchoPreguntaTitulo">
+    <div class="pancho-pregunta-cabeza">
+      <img src="{{ url_for('static', filename='img/don-pancho/pensando.webp') }}" alt="Don Pancho Lulero pensando" width="303" height="508">
+      <div>
+        <div class="pancho-pregunta-nombre">Don Pancho Lulero</div>
+        <h2 id="panchoPreguntaTitulo" class="pancho-pregunta-titulo">¿Sí hizo lo que anotó, {{ current_user.nameUser }}?</h2>
+        <p class="pancho-pregunta-texto">
+          Mire, mano, esto lo tenía anotado en el calendario y todavía no me ha dicho si lo hizo.
+          ¡Cuénteme pues!
+        </p>
+      </div>
+    </div>
+
+    <ul class="pancho-pregunta-lista">
+      {% for p in pendientes %}
+      <li class="pancho-pregunta-item" style="--color-tarea: {{ p.color }};"
+          data-url-hecha="{{ url_for('calendario.marcar_hecha', id=p.id_cultivo, actividad_id=p.id) }}">
+        <div class="pancho-pregunta-info">
+          <div class="pancho-pregunta-tarea">
+            <i class="bi {{ p.icon }}" style="color: {{ p.color }};"></i> {{ p.label }}
+            <span class="pancho-pregunta-cuando {% if p.cuando != 'hoy' %}atrasada{% endif %}">· {{ p.cuando }}</span>
+          </div>
+          <div class="pancho-pregunta-detalle">
+            <i class="bi bi-tree-fill"></i> {{ p.cultivo }} · {{ p.fecha }}{% if p.nota %} · “{{ p.nota }}”{% endif %}
+          </div>
+          <div class="pancho-pregunta-respuesta" aria-live="polite"></div>
+        </div>
+        <div class="pancho-pregunta-botones">
+          <button type="button" class="btn btn-sm btn-neon-primary" data-accion="hecha">
+            <i class="bi bi-check-lg"></i> Sí, ya lo hice
+          </button>
+          <button type="button" class="btn btn-sm btn-neon-outline" data-accion="todavia">
+            Todavía no
+          </button>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="pancho-pregunta-pie">
+      <a href="{{ url_for('calendario.index') }}" class="link-neon"><i class="bi bi-calendar3"></i> Ver mi calendario</a>
+      <button type="button" class="btn btn-sm btn-link pancho-pregunta-despues" data-accion="despues">Después le digo</button>
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/pendientes-don-pancho.js') }}"></script>
+{% endif %}

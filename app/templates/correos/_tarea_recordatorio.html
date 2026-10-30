@@ -1,0 +1,24 @@
+{# Una tarjeta de trabajo dentro del correo de recordatorio (correos/recordatorio.html).
+   Recibe "t" (la tarea) y, si es un trabajo que se pasó de fecha, "atrasada". #}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
+  <tr>
+    <td style="background-color:#132a1a; border:1px solid #1f3a26; border-left:5px solid {{ t.color }}; border-radius:12px; padding:14px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td valign="middle" style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+            <div style="color:#ffffff; font-size:17px; font-weight:800;">
+              <span style="font-size:20px;">{{ t.emoji }}</span>&nbsp; {{ t.etiqueta }}
+            </div>
+            <div style="color:{{ t.color }}; font-size:13px; font-weight:700; margin-top:3px;">&#127807; {{ t.cultivo }}</div>
+            {% if t.nota %}
+            <div style="color:#b8d5c1; font-size:13px; line-height:1.45; margin-top:4px;">&ldquo;{{ t.nota }}&rdquo;</div>
+            {% endif %}
+            {% if atrasada %}
+            <div style="color:#ff8800; font-size:12px; font-weight:700; margin-top:5px;">Era pa'l {{ t.fecha_texto }}</div>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
