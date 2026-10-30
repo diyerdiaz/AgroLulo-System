@@ -59,13 +59,14 @@ def create_app(config_extra=None):
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     @login_manager.user_loader
-    def load_user(idUser):
+    def load_user(id_sesion):
         from .models.users import User
-        user = User.query.get(int(idUser))
+        user = User.query.get(int(id_sesion.partition(':')[0]))
         # Si al administrador le da por bloquear una cuenta que ya tenía
         # una sesión abierta, que quede afuera de una vez (no solo se le
-        # impide volver a iniciar sesión).
-        if user and not user.activo:
+        # impide volver a iniciar sesión). Lo mismo si la contraseña cambió
+        # después de abrir esta sesión (ver User.get_id).
+        if user and (not user.activo or user.get_id() != id_sesion):
             return None
         return user
 

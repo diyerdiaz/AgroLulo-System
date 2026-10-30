@@ -51,7 +51,7 @@ def crear_cultivo(user, nombre='Lote de prueba'):
 
 def iniciar_sesion(client, user):
     with client.session_transaction() as s:
-        s['_user_id'] = str(user.idUser)
+        s['_user_id'] = user.get_id()
         s['_fresh'] = True
 
 
