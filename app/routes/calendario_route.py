@@ -51,6 +51,10 @@ def ver(id):
         month = 1
         year += 1
 
+    # Un año que no existe en una dirección escrita a mano vuelve al actual.
+    if not 1 <= year <= 9999:
+        year = hoy.year
+
     cal = calendar.Calendar(firstweekday=0)  # Semanas de Lunes a Domingo
     semanas = cal.monthdayscalendar(year, month)
 

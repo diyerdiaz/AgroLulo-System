@@ -4,7 +4,7 @@ from app.models.cultivo import Cultivo
 from app.models.ingreso import IngresoCultivo, TIPOS_INGRESO, TIPOS_LULO_COGIDA
 from app.models.gasto import GastoCultivo, TIPOS_GASTO
 from app.models.actividad import ActividadCultivo
-from app.utils.helpers import cultivo_de_usuario
+from app.utils.helpers import cultivo_de_usuario, numero_valido
 from app import db
 from datetime import datetime, time
 
@@ -88,7 +88,7 @@ def add():
         return redirect(url_for('cultivos.new'))
 
     try:
-        hectareas = float(hectareas_raw)
+        hectareas = numero_valido(hectareas_raw)
         if hectareas <= 0:
             raise ValueError()
     except ValueError:
@@ -110,7 +110,7 @@ def add():
     # los registra de verdad más adelante (en Ingresos, Gastos, etc.).
     plantas_raw = request.form.get('plantas', '').strip()
     try:
-        plantas = int(float(plantas_raw))
+        plantas = int(numero_valido(plantas_raw))
         if plantas < 0:
             raise ValueError()
     except ValueError:
@@ -215,7 +215,7 @@ def actualizar(id):
         return redirect(url_for('cultivos.editar', id=id))
 
     try:
-        hectareas = float(hectareas_raw)
+        hectareas = numero_valido(hectareas_raw)
         if hectareas <= 0:
             raise ValueError()
     except ValueError:
@@ -237,7 +237,7 @@ def actualizar(id):
     # con un valor inválido.
     plantas_raw = request.form.get('plantas', '').strip()
     try:
-        plantas = int(float(plantas_raw))
+        plantas = int(numero_valido(plantas_raw))
         if plantas < 0:
             raise ValueError()
     except ValueError:

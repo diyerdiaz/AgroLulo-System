@@ -4,7 +4,7 @@ from app.models.cultivo import Cultivo
 from app.models.ingreso import IngresoCultivo, TIPOS_INGRESO, TIPOS_LULO_COGIDA
 from app.models.gasto import GastoCultivo
 from app.models.actividad import ActividadCultivo
-from app.utils.helpers import formato_moneda, cultivo_de_usuario
+from app.utils.helpers import formato_moneda, cultivo_de_usuario, numero_valido
 from app.utils.cosechas import grupo_de, filas_de_cosecha, paginar
 from app import db
 from datetime import datetime
@@ -163,7 +163,7 @@ def _leer_kilos_sobrantes(tipo_clave):
 
     sobra_raw = request.form.get(f'sobra_{tipo_clave}', '').strip()
     try:
-        kilos_sobrantes = float(sobra_raw)
+        kilos_sobrantes = numero_valido(sobra_raw)
         if kilos_sobrantes <= 0:
             raise ValueError()
     except ValueError:
@@ -203,9 +203,9 @@ def agregar(id):
             continue
 
         try:
-            cantidad = float(cantidad_raw)
-            precio = float(precio_raw)
-            peso = float(peso_raw)
+            cantidad = numero_valido(cantidad_raw)
+            precio = numero_valido(precio_raw)
+            peso = numero_valido(peso_raw)
             if cantidad <= 0 or precio <= 0 or peso <= 0:
                 raise ValueError()
         except ValueError:
@@ -339,9 +339,9 @@ def cosecha_actualizar(id, grupo_id):
             continue
 
         try:
-            cantidad = float(cantidad_raw)
-            precio = float(precio_raw)
-            peso = float(peso_raw)
+            cantidad = numero_valido(cantidad_raw)
+            precio = numero_valido(precio_raw)
+            peso = numero_valido(peso_raw)
             if cantidad <= 0 or precio <= 0 or peso <= 0:
                 raise ValueError()
         except ValueError:
