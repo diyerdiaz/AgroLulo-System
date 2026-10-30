@@ -38,6 +38,10 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     MAIL_SENDER = os.environ.get('MAIL_SENDER') or os.environ.get('MAIL_USERNAME', '')
+    # Dirección pública de la página. Se usa en los botones de los correos
+    # (por ejemplo "Ya lo hice" en los recordatorios del calendario), que se
+    # abren desde el celular de la persona y no saben dónde vive la página.
+    APP_URL = os.environ.get('APP_URL', 'http://127.0.0.1:5001')
 
 #Comandos para descargar en instalar todas las librerias offline  
 #python -m pip download -r requirements.txt -d librerias

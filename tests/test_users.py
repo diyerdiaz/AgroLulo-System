@@ -51,4 +51,6 @@ def test_registro_rechaza_nombre_repetido(client, user):
 def test_admin_ve_panel_de_usuarios(client, admin):
     iniciar_sesion(client, admin)
     assert client.get('/usuarios').status_code == 200
-    assert client.get('/usuarios/estadisticas').status_code == 200
+    # Las estadísticas por usuario (con la plata de cada uno) se quitaron:
+    # ahora esa dirección lleva al panel del administrador.
+    assert client.get('/usuarios/estadisticas').headers['Location'].endswith('/dashboard')

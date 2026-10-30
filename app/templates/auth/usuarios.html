@@ -38,9 +38,11 @@
             <div class="nav-icon-box">
               <i class="bi bi-speedometer2"></i>
             </div>
-            <span>Dashboard General</span>
+            <span>{{ 'Panel del Administrador' if current_user.isAdmin else 'Dashboard General' }}</span>
           </a>
         </li>
+        {# El administrador no lleva cultivos: no ve las secciones del cultivador. #}
+        {% if not current_user.isAdmin %}
         <li>
           <a href="{{ url_for('cultivos.index') }}" class="sidebar-link">
             <div class="nav-icon-box">
@@ -81,6 +83,7 @@
             <span>Pagos</span>
           </a>
         </li>
+        {% endif %}
         {% if current_user.isAdmin %}
         <li>
           <a href="{{ url_for('auth.usuarios') }}" class="sidebar-link active">
@@ -88,14 +91,6 @@
               <i class="bi bi-people-fill"></i>
             </div>
             <span>Usuarios</span>
-          </a>
-        </li>
-        <li>
-          <a href="{{ url_for('auth.estadisticas_usuarios') }}" class="sidebar-link">
-            <div class="nav-icon-box" style="color: #ffb703; border-color: rgba(255, 183, 3, 0.3);">
-              <i class="bi bi-bar-chart-fill"></i>
-            </div>
-            <span>Estadísticas de Usuarios</span>
           </a>
         </li>
         {% endif %}
@@ -241,7 +236,12 @@
                       <div class="indicator-icon-badge" style="width: 38px; height: 38px; font-size: 0.95rem;">
                         <i class="bi bi-person-fill"></i>
                       </div>
+                      {% if not u.isAdmin %}
+                      <a href="{{ url_for('auth.ficha_cultivador', id=u.idUser) }}" class="fw-bold text-white link-ficha" style="font-size: 0.92rem;"
+                         title="Ver cómo ha usado {{ u.nameUser }} la plataforma">{{ u.nameUser }} <i class="bi bi-pie-chart-fill"></i></a>
+                      {% else %}
                       <span class="fw-bold text-white" style="font-size: 0.92rem;">{{ u.nameUser }}</span>
+                      {% endif %}
                       {% if u.idUser == current_user.idUser %}
                       <span class="text-muted" style="font-size: 0.78rem;">(tú)</span>
                       {% endif %}
@@ -272,6 +272,11 @@
                   <td class="text-end">
                     {% if u.idUser != current_user.idUser %}
                       <div class="d-inline-flex gap-2">
+                      {% if not u.isAdmin %}
+                      <a href="{{ url_for('auth.ficha_cultivador', id=u.idUser) }}" class="btn btn-sm btn-outline-info px-2 py-1" title="Ver ficha en porcentajes">
+                        <i class="bi bi-pie-chart-fill me-1"></i> Ver ficha
+                      </a>
+                      {% endif %}
                       {% if u.activo %}
                       <form method="post" action="{{ url_for('auth.usuario_bloquear', id=u.idUser) }}" class="d-inline">
                         <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Bloquear cuenta">

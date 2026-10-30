@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block titulo_pagina %}{{ ficha.nombre }} - Panel del Administrador{% endblock %}
+
+{% block body_class %}dark-theme{% endblock %}
+
+{% block full_content %}
+{#
+  Ficha de un cultivador para el administrador: cómo ha usado la cuenta en
+  cada cultivo, en pasteles con PORCENTAJES. Aquí no llega ningún monto de
+  plata (los datos ya vienen en % desde utils/panel_admin.py).
+#}
+<div class="ambient-neon-glow-1"></div>
+<div class="ambient-neon-glow-2"></div>
+<canvas id="bgCanvas"></canvas>
+
+<div class="dashboard-wrapper dashboard-wrapper-auto">
+  {% include 'partials/menu_admin.html' %}
+
+  <main class="main-content-lulo main-content-lulo-auto">
+
+    <div class="mobile-nav-header">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-neon-outline px-2.5 py-1" onclick="toggleSidebar()">
+          <i class="bi bi-list fs-4"></i>
+        </button>
+        <span class="fw-bold text-white fs-5">AgroLulo <span style="color: var(--neon-green);">Admin</span></span>
+      </div>
+    </div>
+
+    {% include 'partials/notificaciones.html' %}
+
+    <a href="{{ url_for('auth.dashboard') }}" class="link-neon d-inline-block mb-3">
+      <i class="bi bi-arrow-left"></i> Volver al panel
+    </a>
+
+    <!-- Encabezado del cultivador -->
+    <div class="dash-card mb-4">
+      <div class="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-md-center">
+        <div>
+          <div class="lulo-badge mb-2"><i class="bi bi-person-badge"></i> Ficha del cultivador</div>
+          <h1 class="fw-bold text-white mb-1 fs-2">{{ ficha.nombre }}</h1>
+          <p class="text-muted mb-0">
+            Última vez en la plataforma: <strong class="text-light">{{ ficha.ultimo_acceso }}</strong>
+            {% if not ficha.activo %} · <span class="badge bg-secondary">Cuenta bloqueada</span>{% endif %}
+          </p>
+        </div>
+        {% if ficha.pct_cultivos_rentables is not none %}
+        <div class="panel-admin-anillo" style="--pct: {{ ficha.pct_cultivos_rentables }}; --color: var(--neon-green); width: 110px; height: 110px;">
+          <span style="font-size: 1.5rem;">{{ ficha.pct_cultivos_rentables }}%</span>
+        </div>
+        {% endif %}
+      </div>
+      {% if ficha.pct_cultivos_rentables is not none %}
+      <p class="panel-admin-nota mb-0 mt-2 text-md-end">de sus cultivos con datos está dando ganancia</p>
+      {% endif %}
+    </div>
+
+    {% if not ficha.cultivos %}
+    <div class="dash-card text-center py-5">
+      <i class="bi bi-tree fs-1" style="color: var(--neon-green);"></i>
+      <p class="text-muted mt-2 mb-0">{{ ficha.nombre }} todavía no ha creado ningún cultivo.</p>
+    </div>
+    {% else %}
+
+    {% if ficha.cultivos|length > 1 %}
+    <!-- En qué cultivo trabaja más -->
+    <h2 class="panel-admin-seccion"><i class="bi bi-pie-chart-fill"></i> ¿En cuál cultivo trabaja más?</h2>
+    <div class="dash-card mb-4">
+      {% if ficha.reparto_cultivos %}
+      <div class="ficha-pastel" style="height: 260px;"><canvas id="pastelReparto"></canvas></div>
+      <p class="panel-admin-nota text-center mb-0 mt-2">Porcentaje de todo lo que ha registrado, por cultivo.</p>
+      {% else %}
+      <div class="ficha-vacio">Todavía no ha registrado nada en ninguno de sus cultivos.</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Un bloque por cultivo -->
+    <h2 class="panel-admin-seccion"><i class="bi bi-tree-fill"></i> Sus cultivos</h2>
+    {% for c in ficha.cultivos %}
+    <div class="dash-card ficha-cultivo mb-4" style="--color-cultivo: {{ c.color }};">
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+        <div>
+          <h3 class="ficha-cultivo-titulo">{{ c.nombre }}</h3>
+          <div class="ficha-cultivo-datos">
+            {% if c.sembrado %}Sembrado {{ c.sembrado }} · {% endif %}Último registro: {{ c.ultima_actividad }}
+          </div>
+        </div>
+        <div class="text-end">
+          <span class="ficha-estado {{ c.estado|replace(' ', '-') }}">
+            {% if c.estado == 'gana' %}Da ganancia{% elif c.estado == 'pierde' %}En pérdida{% else %}Sin datos de plata{% endif %}
+          </span>
+          {% if c.margen is not none %}
+          <div class="ficha-cultivo-datos mt-1">Rentabilidad: <strong class="text-light">{{ c.margen }}%</strong></div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="ficha-pastel-titulo">¿Cómo ha usado la cuenta?</div>
+          {% if c.interaccion %}
+          <div class="ficha-pastel"><canvas id="pastelUso{{ c.id }}"></canvas></div>
+          {% else %}
+          <div class="ficha-vacio">Todavía no registra nada en este cultivo.</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <div class="ficha-pastel-titulo">¿En qué se le van los gastos?</div>
+          {% if c.gastos %}
+          <div class="ficha-pastel"><canvas id="pastelGastos{{ c.id }}"></canvas></div>
+          {% else %}
+          <div class="ficha-vacio">No ha registrado gastos en este cultivo.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+  </main>
+</div>
+
+<button type="button" id="btnThemeToggle" class="theme-lightning-btn" onclick="cycleThemeColor()"
+  aria-label="Cambiar Tema de Color" title="Cambiar Tema de Color">
+  <i class="bi bi-lightning-charge-fill"></i>
+</button>
+
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script>
+  function toggleSidebar() {
+    document.getElementById('sidebarLulo').classList.toggle('expanded');
+  }
+
+  const themesSequence = ['green', 'blue', 'orange'];
+  function cycleThemeColor() {
+    const currentTheme = localStorage.getItem('agrolulo_theme') || 'green';
+    const nextTheme = themesSequence[(themesSequence.indexOf(currentTheme) + 1) % themesSequence.length];
+    setThemeColor(nextTheme);
+  }
+
+  function setThemeColor(themeName) {
+    document.body.classList.remove('theme-blue', 'theme-orange');
+    if (themeName !== 'green') document.body.classList.add('theme-' + themeName);
+    localStorage.setItem('agrolulo_theme', themeName);
+    if (window.updateCanvasTheme) window.updateCanvasTheme(themeName);
+  }
+
+  // Los pasteles ya llegan en porcentajes (ningún monto de plata).
+  const FICHA = {{ ficha|tojson }};
+
+  function pastel(idCanvas, datos) {
+    const canvas = document.getElementById(idCanvas);
+    if (!canvas || !datos) return;
+    new Chart(canvas, {
+      type: 'doughnut',
+      data: {
+        labels: datos.labels,
+        datasets: [{ data: datos.data, backgroundColor: datos.colores, borderColor: '#0b120d', borderWidth: 3 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '58%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#e5f9eb', boxWidth: 12, padding: 12,
+            generateLabels: (chart) => chart.data.labels.map((l, i) => ({
+              text: l + ' · ' + chart.data.datasets[0].data[i] + '%',
+              fillStyle: chart.data.datasets[0].backgroundColor[i],
+              strokeStyle: 'transparent', fontColor: '#e5f9eb', index: i
+            })) } },
+          tooltip: { callbacks: { label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + '%' } }
+        }
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setThemeColor(localStorage.getItem('agrolulo_theme') || 'green');
+    pastel('pastelReparto', FICHA.reparto_cultivos);
+    FICHA.cultivos.forEach(c => {
+      pastel('pastelUso' + c.id, c.interaccion);
+      pastel('pastelGastos' + c.id, c.gastos);
+    });
+  });
+</script>
+
+<script src="{{ url_for('static', filename='js/login-bg-animation.js') }}"></script>
+{% endblock %}
