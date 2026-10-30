@@ -1,6 +1,7 @@
 import os
 import re
 import smtplib
+import ssl
 from datetime import date
 from email.message import EmailMessage
 from email.utils import make_msgid
@@ -43,7 +44,10 @@ def enviar_correo(destino, asunto, texto, html=None, imagenes=None):
                 parte_html.add_related(archivo.read(), 'image', 'jpeg', cid=f'<{cid}>')
 
     with smtplib.SMTP(cfg['MAIL_SERVER'], cfg['MAIL_PORT'], timeout=15) as servidor:
-        servidor.starttls()
+        # Sin este contexto, starttls() no revisa el certificado del servidor
+        # y alguien en la misma red podría hacerse pasar por Gmail para
+        # robarse MAIL_PASSWORD. Con él, la conexión falla antes del login.
+        servidor.starttls(context=ssl.create_default_context())
         servidor.login(cfg['MAIL_USERNAME'], cfg['MAIL_PASSWORD'])
         servidor.send_message(mensaje)
 
