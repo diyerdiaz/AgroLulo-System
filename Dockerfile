@@ -8,18 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# libzbar0: librería del sistema que necesita "pyzbar" para leer los
-# códigos QR (la usa la función de leer QR de usuarios, en
-# app/routes/users_route.py). Sin esto esa función puntual fallaría.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libzbar0 \
-    && rm -rf /var/lib/apt/lists/*
-
 # Las dependencias se instalan primero, en su propia capa: así Docker no
 # tiene que reinstalarlas cada vez que solo cambia el código de la app.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir gunicorn pyzbar
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
@@ -27,6 +19,14 @@ COPY . .
 # como volumen desde docker-compose.yml para que los datos NO se pierdan
 # cada vez que se recrea el contenedor.
 RUN mkdir -p instance
+
+# La app no corre como root: si alguien lograra entrar por ella, no tendría
+# permisos de administrador dentro del contenedor. En el servidor, la carpeta
+# "instance" debe ser de este usuario: sudo chown -R 1000:1000 instance
+RUN useradd --uid 1000 --no-create-home agrolulo \
+    && mkdir -p app/static/uploads \
+    && chown -R agrolulo instance app/static/uploads
+USER agrolulo
 
 EXPOSE 5000
 

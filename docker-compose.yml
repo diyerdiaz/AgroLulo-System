@@ -23,4 +23,7 @@ services:
       # cultivos, ingresos, gastos, pagos y usuarios NO se pierdan cada
       # vez que se reconstruye o reinicia el contenedor.
       - ./instance:/app/instance
+    # Impide que un proceso del contenedor gane más permisos de los que tiene.
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
