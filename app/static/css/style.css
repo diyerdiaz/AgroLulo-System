@@ -1911,3 +1911,158 @@ html:not(.js-animaciones) .landing-cta,
 .link-ficha { text-decoration: none; }
 .link-ficha i { color: var(--neon-green); font-size: 0.8rem; margin-left: 2px; }
 .link-ficha:hover { color: var(--neon-green) !important; text-decoration: underline; }
+
+   Don Pancho pregunta por los trabajos sin marcar
+   (partials/pendientes_don_pancho.html + js/pendientes-don-pancho.js)
+   ================================================================ */
+.pancho-pregunta {
+  position: fixed;
+  inset: 0;
+  z-index: 2990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.pancho-pregunta.visible { opacity: 1; pointer-events: auto; }
+.pancho-pregunta.saliendo { opacity: 0; }
+
+.pancho-pregunta-fondo {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.pancho-pregunta-tarjeta {
+  position: relative;
+  width: 560px;
+  max-width: 100%;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  background: rgba(8, 12, 10, 0.98);
+  border: 1px solid var(--border-neon);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 25px var(--neon-green-glow);
+  color: var(--text-light);
+  white-space: normal;
+}
+.pancho-pregunta.visible .pancho-pregunta-tarjeta { animation: donPanchoEntra 0.3s ease-out; }
+
+.pancho-pregunta-cabeza {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.pancho-pregunta-cabeza img {
+  width: 96px;
+  height: auto;
+  flex-shrink: 0;
+  border-radius: 14px;
+  border: 1px solid var(--border-neon);
+}
+.pancho-pregunta-nombre {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--gold-accent);
+}
+.pancho-pregunta-titulo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--neon-green);
+  margin: 2px 0 6px;
+}
+.pancho-pregunta-texto {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.pancho-pregunta-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pancho-pregunta-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--color-tarea, var(--neon-green));
+  transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease;
+}
+.pancho-pregunta-item.hecha { background: rgba(57, 255, 20, 0.1); border-color: var(--neon-green); }
+.pancho-pregunta-item.todavia { background: rgba(255, 183, 3, 0.08); }
+.pancho-pregunta-item.quitando { opacity: 0; transform: translateX(30px); }
+
+.pancho-pregunta-info { min-width: 0; flex: 1 1 220px; }
+.pancho-pregunta-tarea { font-weight: 700; font-size: 0.98rem; }
+.pancho-pregunta-cuando { color: var(--text-muted); font-weight: 600; }
+.pancho-pregunta-cuando.atrasada { color: #ff8800; }
+.pancho-pregunta-detalle { color: var(--text-muted); font-size: 0.82rem; margin-top: 2px; }
+.pancho-pregunta-respuesta { color: var(--neon-green); font-size: 0.85rem; font-weight: 700; margin-top: 4px; }
+.pancho-pregunta-respuesta:empty { display: none; }
+.pancho-pregunta-item.todavia .pancho-pregunta-respuesta { color: var(--gold-accent); }
+
+.pancho-pregunta-botones { display: flex; gap: 6px; flex-wrap: wrap; }
+.pancho-pregunta-botones .btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.pancho-pregunta-botones .btn-neon-primary:focus,
+.pancho-pregunta-botones .btn-neon-primary:focus-visible {
+  background: var(--neon-green);
+  color: #000;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 20px var(--neon-green-glow);
+}
+
+.pancho-pregunta-pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pancho-pregunta-despues { color: var(--text-muted); text-decoration: underline; }
+.pancho-pregunta-despues:hover { color: var(--text-light); }
+
+@media (max-width: 575.98px) {
+  .pancho-pregunta-tarjeta { padding: 16px; }
+  .pancho-pregunta-cabeza img { width: 70px; }
+  .pancho-pregunta-titulo { font-size: 1.08rem; }
+  .pancho-pregunta-botones { width: 100%; }
+  .pancho-pregunta-botones .btn { flex: 1; }
+}
+
+/* Estado de los trabajos en el calendario (hecho / pendiente) */
+.etiqueta-estado {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.etiqueta-estado.hecha { color: #000; background: var(--neon-green); }
+.etiqueta-estado.pendiente { color: #ff8800; border: 1px solid #ff8800; }
+.etiqueta-estado.programada { color: var(--text-muted); border: 1px solid rgba(255, 255, 255, 0.25); }
+.etiqueta-hecha-texto { text-decoration: line-through; opacity: 0.7; }

@@ -20,6 +20,12 @@ TIPOS_ACTIVIDAD = {
 # (se excluye 'creacion', que solo se genera automáticamente).
 TIPOS_SELECCIONABLES = {k: v for k, v in TIPOS_ACTIVIDAD.items() if k != 'creacion'}
 
+# Tipos que son trabajos por hacer: se pueden marcar como "hecho", Don
+# Pancho pregunta por ellos si se pasan sin marcar y llegan en el correo
+# de las 6:00 a. m. Los demás (cosecha, gasto, pago) son registros que se
+# crean solos al llenar Ingresos/Gastos/Pagos y no necesitan seguimiento.
+TIPOS_CON_SEGUIMIENTO = ('fumigacion', 'siembra', 'abono', 'riego', 'trabajo', 'otro')
+
 
 class ActividadCultivo(db.Model):
     __tablename__ = 'actividades_cultivo'
@@ -34,6 +40,17 @@ class ActividadCultivo(db.Model):
     # (idCogida de IngresoCultivo), para poder actualizar o borrar esta
     # etiqueta si la cosecha se edita o se elimina.
     idCogida = db.Column(db.Integer, nullable=True)
+    # Si el trabajo ya se hizo. Se marca desde el calendario o desde la
+    # pregunta de Don Pancho, el mismo día o cualquier día después. Las
+    # etiquetas que ya existían antes de este campo quedan como hechas
+    # (ver _asegurar_columnas en app/__init__.py) para no preguntar por
+    # trabajos viejos.
+    hecha = db.Column(db.Boolean, default=False, nullable=False)
+    fecha_hecha = db.Column(db.DateTime, nullable=True)
+
+    @property
+    def con_seguimiento(self):
+        return self.tipo in TIPOS_CON_SEGUIMIENTO
 
     def to_dict(self):
         meta = TIPOS_ACTIVIDAD.get(self.tipo, TIPOS_ACTIVIDAD['otro'])
@@ -45,4 +62,6 @@ class ActividadCultivo(db.Model):
             'color': meta['color'],
             'nota': self.nota or '',
             'eliminable': True,
+            'seguimiento': self.con_seguimiento,
+            'hecha': self.hecha,
         }

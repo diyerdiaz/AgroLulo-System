@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>{{ tema.titulo }} {{ tema.resaltado }} · AgroLulo System</title>
+  <style>
+    @media only screen and (max-width: 600px) {
+      .tarjeta { width: 100% !important; border-radius: 0 !important; }
+      .relleno { padding-left: 18px !important; padding-right: 18px !important; }
+      .titulo { font-size: 30px !important; }
+      .col-pancho { display: block !important; width: 100% !important; text-align: center !important; padding: 0 0 12px !important; }
+      .col-globo { display: block !important; width: 100% !important; }
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#07100a; -webkit-text-size-adjust:100%;">
+
+  <!-- Texto de vista previa en la bandeja de entrada -->
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:#07100a;">
+    {{ frase }}
+    &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#07100a;">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+
+        <!-- Marca -->
+        <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" class="tarjeta" style="width:580px; max-width:580px;">
+          <tr>
+            <td align="center" style="padding:0 0 16px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="34" height="34" align="center" valign="middle" style="width:34px; height:34px; background-color:#39ff14; border-radius:50%; font-size:17px; line-height:34px;">&#127807;</td>
+                  <td style="padding-left:10px; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:19px; font-weight:800; color:#ffffff;">
+                    Agro<span style="color:#39ff14;">Lulo</span> System
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Tarjeta principal -->
+        <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" class="tarjeta" style="width:580px; max-width:580px; background-color:#0f1a13; border:1px solid {{ tema.color }}55; border-radius:20px; overflow:hidden;">
+
+          <!-- Encabezado de color del tema -->
+          <tr>
+            <td align="center" class="relleno" style="background-color:{{ tema.fondo }}; border-bottom:3px solid {{ tema.color }}; padding:30px 36px 26px; font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+              <div style="font-size:56px; line-height:1;">{{ tema.emoji }}</div>
+              <span style="display:inline-block; margin-top:14px; padding:6px 14px; border:1px solid {{ tema.color }}; border-radius:999px; color:{{ tema.color }}; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;">
+                Recordatorio · {{ fecha }}
+              </span>
+              <h1 class="titulo" style="margin:14px 0 0; color:#ffffff; font-size:36px; line-height:1.15; font-weight:900;">
+                {{ tema.titulo }} <span style="color:{{ tema.color }};">{{ tema.resaltado }}</span>
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Don Pancho hablando -->
+          <tr>
+            <td class="relleno" style="padding:26px 30px 6px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="col-pancho" width="150" valign="bottom" style="width:150px; padding-right:16px;">
+                    <img src="cid:{{ cid_pancho }}" width="140" alt="Don Pancho Lulero" style="display:inline-block; width:140px; max-width:140px; height:auto; border:2px solid {{ tema.color }}; border-radius:16px;">
+                  </td>
+                  <td class="col-globo" valign="middle" style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+                    <div style="background-color:#16271b; border:1px solid #24402c; border-radius:16px; padding:16px 18px;">
+                      <div style="color:#ffb703; font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;">Don Pancho Lulero dice:</div>
+                      <p style="margin:8px 0 0; color:#e5f9eb; font-size:16px; line-height:1.55;">{{ frase }}</p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          {% if tareas_hoy %}
+          <!-- Trabajos de hoy -->
+          <tr>
+            <td class="relleno" style="padding:22px 30px 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+              <div style="color:#b8d5c1; font-size:12px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;">&#128197; Pa' hoy le toca</div>
+              {% for t in tareas_hoy %}
+              {% include 'correos/_tarea_recordatorio.html' %}
+              {% endfor %}
+            </td>
+          </tr>
+          {% endif %}
+
+          {% if atrasadas %}
+          <!-- Trabajos que se le pasaron -->
+          <tr>
+            <td class="relleno" style="padding:22px 30px 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+              <div style="color:#ff8800; font-size:12px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;">&#9200; Se le quedó pendiente</div>
+              {% for t in atrasadas %}
+              {% set atrasada = True %}
+              {% include 'correos/_tarea_recordatorio.html' %}
+              {% endfor %}
+            </td>
+          </tr>
+          {% endif %}
+
+          <!-- Consejos de Don Pancho -->
+          <tr>
+            <td class="relleno" style="padding:24px 30px 30px; font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:{{ tema.fondo }}; border-left:4px solid {{ tema.color }}; border-radius:12px; padding:16px 18px;">
+                    <div style="color:{{ tema.color }}; font-size:14px; font-weight:800; margin-bottom:6px;">&#128161; Consejos de Don Pancho</div>
+                    {% for c in tema.consejos %}
+                    <div style="color:#e5f9eb; font-size:14px; line-height:1.55; padding:3px 0;">&#10148;&nbsp; {{ c }}</div>
+                    {% endfor %}
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                <tr>
+                  <td align="center">
+                    <a href="{{ url_calendario }}" style="display:inline-block; background-color:#39ff14; color:#000000; font-weight:800; font-size:15px; text-decoration:none; padding:14px 28px; border-radius:12px; letter-spacing:0.5px;">
+                      &#128197; Abrir mi calendario
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Pie -->
+        <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" class="tarjeta" style="width:580px; max-width:580px;">
+          <tr>
+            <td align="center" style="padding:20px 20px 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif; color:#6f8f78; font-size:12px; line-height:1.6;">
+              Le llega este correo porque tiene trabajos anotados en el Calendario de AgroLulo.<br>
+              Don Pancho le escribe todos los días a las 6:00 a. m. &#127818;<br>
+              <span style="color:#3f5c47;">© {{ anio }} AgroLulo System · Correo automático, no lo responda</span>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -244,3 +244,23 @@ def test_el_codigo_no_trae_nombres_de_usuario_fijos():
     codigo = inspect.getsource(datos_demo)
     for viejo in ['juan_restrepo', 'maria_ospina', 'yesenia_toro', 'wilson_arango']:
         assert viejo not in codigo
+
+
+def test_datos_demo_no_dejan_trabajos_viejos_pendientes(app):
+    from app.models.actividad import ActividadCultivo, TIPOS_CON_SEGUIMIENTO
+    from app.utils.datos_demo import crear_datos_demo
+    crear_datos_demo('Clave2026x')
+    limite = date.today() - timedelta(days=6)
+    viejos = ActividadCultivo.query.filter(ActividadCultivo.tipo.in_(TIPOS_CON_SEGUIMIENTO),
+                                           ActividadCultivo.fecha < limite,
+                                           ActividadCultivo.hecha.is_(False)).count()
+    assert viejos == 0
+
+
+def test_admin_no_recibe_la_pregunta_de_don_pancho(admin_client, admin):
+    from app.models.actividad import ActividadCultivo
+    lote = crear_cultivo(admin, 'Lote viejo del admin')
+    db.session.add(ActividadCultivo(idCultivo=lote.idCultivo, tipo='riego', fecha=date.today()))
+    db.session.commit()
+    assert 'id="panchoPregunta"' not in admin_client.get('/dashboard').data.decode()
+
