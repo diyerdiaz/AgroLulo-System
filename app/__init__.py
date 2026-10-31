@@ -52,7 +52,8 @@ def create_app(config_extra=None):
     compress.init_app(app)
     csrf.init_app(app)
 
-    from app.utils.seguridad import agregar_cabeceras_seguridad
+    from app.utils.seguridad import agregar_cabeceras_seguridad, limitar_formularios_de_texto
+    app.before_request(limitar_formularios_de_texto)
     app.after_request(agregar_cabeceras_seguridad)
     if app.config['DETRAS_DE_HTTPS']:
         # Sin esto, todas las visitas parecerían venir de la IP del proxy.
@@ -73,10 +74,11 @@ def create_app(config_extra=None):
     # Register blueprints
     from app.routes import (
         users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route,
-        landing_route
+        landing_route, pwa_route
     )
 
     app.register_blueprint(landing_route.bp)
+    app.register_blueprint(pwa_route.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(users_route.bp)
     app.register_blueprint(cultivos_route.bp)
@@ -150,32 +152,30 @@ def create_app(config_extra=None):
             from app.models.users import User
             from app.models.cultivo import Cultivo
 
-            admin = User.query.filter_by(nameUser='admin').first()
+            # Se busca por el permiso, no por el nombre: antes, si el
+            # administrador se cambiaba el nombre, cualquiera podía llamarse
+            # 'admin' y volverse administrador en el siguiente reinicio.
+            admin = User.query.filter_by(isAdmin=True).order_by(User.idUser).first()
             if not admin:
-                # Antes nacía con la contraseña '123': en una instalación nueva
-                # cualquiera podía entrar primero como admin. Ahora nace con
-                # una contraseña al azar que nadie conoce; para usarla hay que
-                # ponerle una con `flask --app run crear-admin`.
-                admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
-                admin.set_password(secrets.token_urlsafe(32))
-                print("Se creó la cuenta 'admin'. Ponle contraseña con: flask --app run crear-admin")
-                db.session.add(admin)
-                db.session.commit()
-            else:
-                cambios_admin = False
-                if not admin.isAdmin:
-                    # Cubre bases de datos que ya existían antes de que se
-                    # agregara la columna isAdmin: la cuenta 'admin' siempre
-                    # debe quedar marcada como administradora.
+                admin = User.query.filter_by(nameUser='admin').first()
+                if admin:
+                    # Cubre bases de datos anteriores a la columna isAdmin.
                     admin.isAdmin = True
-                    cambios_admin = True
-                if not admin.activo:
-                    # La cuenta 'admin' nunca debe quedar bloqueada, aunque
-                    # alguien la hubiera desactivado por error.
-                    admin.activo = True
-                    cambios_admin = True
-                if cambios_admin:
-                    db.session.commit()
+                else:
+                    # Antes nacía con la contraseña '123': en una instalación
+                    # nueva cualquiera podía entrar primero como admin. Ahora
+                    # nace con una contraseña al azar que nadie conoce; para
+                    # usarla hay que ponerle una con `flask --app run crear-admin`.
+                    admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
+                    admin.set_password(secrets.token_urlsafe(32))
+                    print("Se creó la cuenta 'admin'. Ponle contraseña con: flask --app run crear-admin")
+                    db.session.add(admin)
+                db.session.commit()
+            if not admin.activo:
+                # La cuenta administradora nunca debe quedar bloqueada, aunque
+                # alguien la hubiera desactivado por error.
+                admin.activo = True
+                db.session.commit()
 
             # Las contraseñas ahora se guardan encriptadas (hash), nunca en
             # texto plano. Esto encripta, sin pedirle nada a nadie, las

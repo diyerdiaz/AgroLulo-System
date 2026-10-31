@@ -16,7 +16,10 @@ services:
       APP_URL: ${APP_URL:-http://127.0.0.1:5000}
       DETRAS_DE_HTTPS: ${DETRAS_DE_HTTPS:-0}
     ports:
-      - "5000:5000"
+      # Solo desde el mismo servidor: desde internet se entra por el proxy con
+      # HTTPS. Abierto a todos, cualquiera podría saltarse el proxy y
+      # falsificar su IP para evitar los bloqueos de intentos.
+      - "127.0.0.1:5000:5000"
     volumes:
       # Guarda la base de datos SQLite (flaskdb.sqlite) fuera del
       # contenedor, en la carpeta "instance" del proyecto, para que tus

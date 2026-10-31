@@ -9,7 +9,7 @@ from app.models.codigo_recuperacion import CodigoRecuperacion
 from app.utils.panel_admin import calcular_panel, detalle_cultivador
 from app.utils.correo import correo_valido, enviar_codigo_recuperacion
 from app.utils.seguridad import (
-    errores_contrasena, mensaje_contrasena_invalida,
+    errores_contrasena, error_nombre_usuario, mensaje_contrasena_invalida,
     ip_solicitante, segundos_bloqueo_restante, registrar_intento, limpiar_intentos,
 )
 from app import db
@@ -50,7 +50,8 @@ def login():
                 flash('Tu cuenta ya fue creada, pero está esperando a que el administrador la active. Intenta iniciar sesión más tarde.', 'warning')
                 return redirect(url_for('auth.login'))
 
-            limpiar_intentos(ip)
+            # Los fallos de esta IP NO se borran aquí: si no, bastaría con entrar
+            # a una cuenta propia cada pocos intentos para no bloquearse nunca.
             # Si la contraseña con la que entró no cumple las reglas de
             # seguridad actuales, también se le obliga a cambiarla.
             if errores_contrasena(passwordUser, user.nameUser) and not user.debe_cambiar_password:
@@ -168,16 +169,19 @@ def recuperar_codigo():
         registro = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
                     .order_by(CodigoRecuperacion.creado.desc()).first())
 
-    # Además del límite de cada código, los fallos se cuentan por cuenta:
-    # pedir un código nuevo no le da a un atacante más intentos.
+    # Además del límite de cada código, los fallos se cuentan por conexión y
+    # por cuenta: pedir un código nuevo no le da a un atacante más intentos.
+    ip = ip_solicitante()
     vigente = (registro is not None and registro.expira > _ahora()
                and registro.intentos < CODIGO_INTENTOS_MAXIMOS
-               and segundos_bloqueo_restante(clave_cuenta, 'codigo') == 0)
+               and segundos_bloqueo_restante(ip, 'codigo') == 0
+               and segundos_bloqueo_restante(clave_cuenta, 'codigo_cuenta') == 0)
     if not vigente or not check_password_hash(registro.codigo_hash, codigo):
         if vigente:
             registro.intentos += 1
             db.session.commit()
-            registrar_intento(clave_cuenta, 'codigo')
+            registrar_intento(ip, 'codigo')
+            registrar_intento(clave_cuenta, 'codigo_cuenta')
         flash('El código es incorrecto o ya venció. Revísalo o solicita uno nuevo.', 'danger')
         return render_template("auth/login.html", show_codigo=True)
 
@@ -220,7 +224,7 @@ def recuperar_nueva():
     user.set_password(nueva_password)
     CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
     db.session.commit()
-    limpiar_intentos(f'cuenta:{user.idUser}', 'codigo')
+    limpiar_intentos(f'cuenta:{user.idUser}', 'codigo_cuenta')
     session.pop('recuperar_codigo_ok', None)
     session.pop('recuperar_para', None)
     flash('¡Listo! Tu contraseña se cambió. Ya puedes iniciar sesión con la nueva.', 'success')
@@ -228,7 +232,7 @@ def recuperar_nueva():
 
 # Páginas a las que sí se puede entrar mientras la cuenta está obligada a
 # cambiar su contraseña (todo lo demás redirige a la pantalla de cambio).
-_PERMITIDAS_SIN_CAMBIAR = {'auth.cambiar_contrasena', 'auth.logout', 'static'}
+_PERMITIDAS_SIN_CAMBIAR = {'auth.cambiar_contrasena', 'auth.logout', 'static', 'pwa.service_worker', 'pwa.offline'}
 
 
 @bp.before_app_request
@@ -498,6 +502,10 @@ def editar_perfil():
             return redirect(url_for('auth.editar_perfil'))
 
         if nuevo_nombre != current_user.nameUser:
+            error_nombre = error_nombre_usuario(nuevo_nombre)
+            if error_nombre:
+                flash(error_nombre, 'danger')
+                return redirect(url_for('auth.editar_perfil'))
             ya_existe = User.query.filter(
                 User.nameUser == nuevo_nombre, User.idUser != current_user.idUser
             ).first()
@@ -580,6 +588,11 @@ def usuario_crear():
 
     if not nameUser or not passwordUser:
         flash('Debes escribir un nombre de usuario y una contraseña para crear la cuenta.', 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    error_nombre = error_nombre_usuario(nameUser)
+    if error_nombre:
+        flash(error_nombre, 'danger')
         return redirect(url_for('auth.usuarios'))
 
     ya_existe = User.query.filter_by(nameUser=nameUser).first()

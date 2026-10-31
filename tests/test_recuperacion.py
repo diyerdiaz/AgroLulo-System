@@ -103,6 +103,21 @@ def test_pedir_codigos_nuevos_no_da_mas_intentos(client, cuenta, correos, monkey
     assert 'Código verificado'.encode() not in response.data
 
 
+def test_un_atacante_no_puede_bloquear_la_recuperacion_ajena(app, cuenta, correos, monkeypatch):
+    monkeypatch.setattr(auth, 'CODIGO_SEGUNDOS_ENTRE_ENVIOS', 0)
+    atacante, duena = app.test_client(), app.test_client()
+    ip_atacante = {'environ_base': {'REMOTE_ADDR': '203.0.113.1'}}
+    for _ in range(3):
+        atacante.post('/recuperar', data={'usuarioCorreo': 'lulero'}, **ip_atacante)
+        for _ in range(5):
+            atacante.post('/recuperar/codigo', data={'codigo': 'abcdef'}, **ip_atacante)
+
+    ip_duena = {'environ_base': {'REMOTE_ADDR': '203.0.113.2'}}
+    duena.post('/recuperar', data={'usuarioCorreo': 'lulero'}, **ip_duena)
+    respuesta = duena.post('/recuperar/codigo', data={'codigo': correos[-1]['codigo']}, **ip_duena)
+    assert 'Código verificado'.encode() in respuesta.data
+
+
 def test_limite_de_solicitudes_por_conexion(client, cuenta, correos, monkeypatch):
     monkeypatch.setattr(auth, 'CODIGO_SEGUNDOS_ENTRE_ENVIOS', 0)
     for _ in range(LIMITES['recuperar'][0]):

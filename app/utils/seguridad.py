@@ -1,7 +1,8 @@
 import re
 from datetime import datetime, timedelta, timezone
 
-from flask import current_app, request
+from flask import abort, current_app, request
+from flask_login import current_user
 
 from app import db
 from app.models.intento_acceso import IntentoAcceso
@@ -34,6 +35,24 @@ def errores_contrasena(contrasena, nombre_usuario=None):
     return errores
 
 
+NOMBRE_MIN = 3
+NOMBRE_MAX = 30
+_PATRON_NOMBRE = re.compile(r'^[\w.-]+(?: [\w.-]+)*$')
+# Nadie puede hacerse pasar por la administración con estos nombres.
+_NOMBRES_RESERVADOS = {'admin', 'administrador', 'administrator', 'root', 'soporte'}
+
+
+def error_nombre_usuario(nombre):
+    """Devuelve qué tiene de malo un nombre de usuario nuevo, o None si está bien."""
+    if not NOMBRE_MIN <= len(nombre) <= NOMBRE_MAX:
+        return f'El nombre de usuario debe tener entre {NOMBRE_MIN} y {NOMBRE_MAX} caracteres.'
+    if not _PATRON_NOMBRE.match(nombre):
+        return 'El nombre de usuario solo puede tener letras, números, espacios, puntos, guiones y guiones bajos.'
+    if nombre.lower() in _NOMBRES_RESERVADOS:
+        return 'Ese nombre de usuario no está disponible.'
+    return None
+
+
 def mensaje_contrasena_invalida(errores):
     """Arma un solo mensaje claro a partir de la lista de reglas que faltan."""
     return 'La contraseña debe ' + ', '.join(errores[:-1]) + (' y ' if len(errores) > 1 else '') + errores[-1] + '.'
@@ -55,12 +74,23 @@ POLITICA_CONTENIDO = '; '.join([
 ])
 
 
+def limitar_formularios_de_texto():
+    """Rechaza con 413 los formularios de texto demasiado grandes."""
+    if (request.mimetype == 'application/x-www-form-urlencoded'
+            and (request.content_length or 0) > current_app.config['MAX_FORMULARIO_TEXTO']):
+        abort(413)
+
+
 def agregar_cabeceras_seguridad(respuesta):
     """Le dice al navegador qué no debe permitir con esta página."""
     respuesta.headers['Content-Security-Policy'] = POLITICA_CONTENIDO
     respuesta.headers['X-Frame-Options'] = 'DENY'
     respuesta.headers['X-Content-Type-Options'] = 'nosniff'
     respuesta.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # Las páginas de una cuenta no se guardan en el navegador: en un celular
+    # o computador compartido, otra persona podría verlas con el botón Atrás.
+    if current_user.is_authenticated and request.endpoint != 'static':
+        respuesta.headers['Cache-Control'] = 'no-store'
     if current_app.config.get('DETRAS_DE_HTTPS'):
         respuesta.headers['Strict-Transport-Security'] = 'max-age=31536000'
     return respuesta
@@ -74,6 +104,9 @@ LIMITES = {
     'registro': (5, 60 * 60),
     'recuperar': (10, 60 * 60),
     'codigo': (10, 24 * 60 * 60),
+    # Más alto que el de la IP: si fuera igual, un atacante podría agotarlo
+    # a propósito y dejar a la persona sin poder recuperar su cuenta.
+    'codigo_cuenta': (50, 24 * 60 * 60),
 }
 DIAS_CONSERVAR_INTENTOS = 2
 
