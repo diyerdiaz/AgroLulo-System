@@ -21,12 +21,10 @@ COPY . .
 RUN mkdir -p instance
 
 # La app no corre como root: si alguien lograra entrar por ella, no tendría
-# permisos de administrador dentro del contenedor. En el servidor, la carpeta
-# "instance" debe ser de este usuario: sudo chown -R 1000:1000 instance
+# permisos de administrador dentro del contenedor. Ver docker/entrypoint.sh.
 RUN useradd --uid 1000 --no-create-home agrolulo \
     && mkdir -p app/static/uploads \
     && chown -R agrolulo instance app/static/uploads
-USER agrolulo
 
 EXPOSE 5000
 
@@ -44,4 +42,5 @@ EXPOSE 5000
 # esto evita que se acumule indefinidamente hasta tumbar el servidor por
 # falta de memoria, como se vio en los logs ("WORKER TIMEOUT" / "Perhaps
 # out of memory?").
+ENTRYPOINT ["sh", "/app/docker/entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "--max-requests", "300", "--max-requests-jitter", "50", "run:app"]
