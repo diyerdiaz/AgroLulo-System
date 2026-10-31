@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import qrcode
 from io import BytesIO
 import base64
+from hashlib import sha256
 from PIL import Image
 import os
 from flask import url_for, current_app
@@ -53,7 +54,11 @@ class User(db.Model, UserMixin):
     # computerLoansUser = db.relationship('ComputerLoan', back_populates='user', lazy='dynamic')
 
     def get_id(self):
-        return str(self.idUser)
+        # La sesión guarda también una huella de la contraseña. Al cambiarla,
+        # la huella deja de coincidir y se cierran las sesiones abiertas en
+        # otros dispositivos (por ejemplo, la de alguien que entró sin permiso).
+        huella = sha256(self.passwordUser.encode()).hexdigest()[:16]
+        return f'{self.idUser}:{huella}'
 
     def set_password(self, password_en_texto_plano):
         """Guarda la contraseña ya encriptada (hash), nunca el texto plano."""

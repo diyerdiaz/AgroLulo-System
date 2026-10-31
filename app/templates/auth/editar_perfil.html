@@ -162,6 +162,7 @@
           </div>
 
           <form method="post" action="{{ url_for('auth.editar_perfil') }}" class="text-start">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="mb-3">
               <label for="nameUser" class="form-neon-label">

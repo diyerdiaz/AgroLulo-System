@@ -33,6 +33,7 @@
         <div id="cambioError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
 
         <form method="post" action="{{ url_for('auth.cambiar_contrasena') }}" onsubmit="return validarCambio(event)" class="text-start">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           {% if not current_user.emailUser %}
           <div class="mb-2">

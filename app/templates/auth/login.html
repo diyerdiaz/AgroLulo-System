@@ -45,6 +45,7 @@
             </div>
 
             <form method="post" action="{{ url_for('auth.login') }}" class="text-start">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="mb-3">
                 <label for="nameUser" class="form-neon-label">
                   <i class="bi bi-person me-1"></i> Usuario
@@ -106,6 +107,7 @@
             <div id="registerError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
 
             <form method="post" action="{{ url_for('user.add') }}" onsubmit="return validateRegister(event)" class="text-start">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="mb-2">
                 <label for="regNameUser" class="form-neon-label">
                   <i class="bi bi-person me-1"></i> Usuario
@@ -184,6 +186,7 @@
             </div>
 
             <form method="post" action="{{ url_for('auth.recuperar_contrasena') }}" class="text-start">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="mb-4">
                 <label for="usuarioCorreo" class="form-neon-label">
                   <i class="bi bi-person-badge me-1"></i> Usuario o correo electrónico
@@ -224,6 +227,7 @@
             </div>
 
             <form method="post" action="{{ url_for('auth.recuperar_codigo') }}" class="text-start" data-codigo-casillas>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="mb-4">
                 <label for="codigoDigito1" class="form-neon-label d-block text-center">
                   <i class="bi bi-123 me-1"></i> Código de verificación
@@ -276,6 +280,7 @@
             <div id="nuevaError" class="alert alert-danger d-none py-2 px-3 mb-3 text-start" style="font-size: 0.85rem; border-left: 4px solid #ff4d4d;"></div>
 
             <form method="post" action="{{ url_for('auth.recuperar_nueva') }}" onsubmit="return validateNueva(event)" class="text-start">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div class="mb-2">
                 <label for="nuevaPassword" class="form-neon-label">
                   <i class="bi bi-lock me-1"></i> Nueva Contraseña
