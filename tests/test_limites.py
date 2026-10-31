@@ -30,10 +30,15 @@ def test_el_bloqueo_vence_solo(client, user):
     assert client.post('/login', data={'nameUser': 'test_user', 'passwordUser': 'clave123'}).status_code == 302
 
 
-def test_el_login_correcto_borra_los_fallos(client, user):
-    _fallar_login(client, LIMITES['login'][0] - 1)
-    client.post('/login', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
-    assert IntentoAcceso.query.filter_by(accion='login').count() == 0
+def test_entrar_a_una_cuenta_propia_no_borra_los_fallos(app, user):
+    crear_usuario('atacante', clave=CLAVE)
+    for _ in range(LIMITES['login'][0] - 1):
+        app.test_client().post('/login', data={'nameUser': 'test_user', 'passwordUser': 'mala'})
+    app.test_client().post('/login', data={'nameUser': 'atacante', 'passwordUser': CLAVE})
+    app.test_client().post('/login', data={'nameUser': 'test_user', 'passwordUser': 'mala'})
+
+    respuesta = app.test_client().post('/login', data={'nameUser': 'test_user', 'passwordUser': 'clave123'})
+    assert 'Demasiados intentos'.encode() in respuesta.data
 
 
 def test_el_bloqueo_de_una_ip_no_afecta_a_otra(app, user):
