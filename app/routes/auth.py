@@ -9,7 +9,7 @@ from app.models.codigo_recuperacion import CodigoRecuperacion
 from app.utils.panel_admin import calcular_panel, detalle_cultivador
 from app.utils.correo import correo_valido, enviar_codigo_recuperacion
 from app.utils.seguridad import (
-    errores_contrasena, mensaje_contrasena_invalida,
+    errores_contrasena, error_nombre_usuario, mensaje_contrasena_invalida,
     ip_solicitante, segundos_bloqueo_restante, registrar_intento, limpiar_intentos,
 )
 from app import db
@@ -498,6 +498,10 @@ def editar_perfil():
             return redirect(url_for('auth.editar_perfil'))
 
         if nuevo_nombre != current_user.nameUser:
+            error_nombre = error_nombre_usuario(nuevo_nombre)
+            if error_nombre:
+                flash(error_nombre, 'danger')
+                return redirect(url_for('auth.editar_perfil'))
             ya_existe = User.query.filter(
                 User.nameUser == nuevo_nombre, User.idUser != current_user.idUser
             ).first()
@@ -580,6 +584,11 @@ def usuario_crear():
 
     if not nameUser or not passwordUser:
         flash('Debes escribir un nombre de usuario y una contraseña para crear la cuenta.', 'danger')
+        return redirect(url_for('auth.usuarios'))
+
+    error_nombre = error_nombre_usuario(nameUser)
+    if error_nombre:
+        flash(error_nombre, 'danger')
         return redirect(url_for('auth.usuarios'))
 
     ya_existe = User.query.filter_by(nameUser=nameUser).first()

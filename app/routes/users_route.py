@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.users import User
 from app.utils.correo import correo_valido
 from app.utils.seguridad import (
-    errores_contrasena, mensaje_contrasena_invalida,
+    errores_contrasena, error_nombre_usuario, mensaje_contrasena_invalida,
     ip_solicitante, segundos_bloqueo_restante, registrar_intento,
 )
 from app import db
@@ -32,6 +32,11 @@ def add():
         nameUser = request.form['nameUser'].strip()
         passwordUser = request.form['passwordUser']
         emailUser = request.form.get('emailUser', '').strip().lower()
+
+        error_nombre = error_nombre_usuario(nameUser)
+        if error_nombre:
+            flash(error_nombre, "danger")
+            return render_template('auth/login.html', show_register=True)
 
         # El nombre de usuario debe ser único: si ya existe una cuenta con
         # ese nombre, se avisa con un mensaje claro en vez de dejar que

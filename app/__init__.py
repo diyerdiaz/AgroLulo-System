@@ -150,32 +150,30 @@ def create_app(config_extra=None):
             from app.models.users import User
             from app.models.cultivo import Cultivo
 
-            admin = User.query.filter_by(nameUser='admin').first()
+            # Se busca por el permiso, no por el nombre: antes, si el
+            # administrador se cambiaba el nombre, cualquiera podía llamarse
+            # 'admin' y volverse administrador en el siguiente reinicio.
+            admin = User.query.filter_by(isAdmin=True).order_by(User.idUser).first()
             if not admin:
-                # Antes nacía con la contraseña '123': en una instalación nueva
-                # cualquiera podía entrar primero como admin. Ahora nace con
-                # una contraseña al azar que nadie conoce; para usarla hay que
-                # ponerle una con `flask --app run crear-admin`.
-                admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
-                admin.set_password(secrets.token_urlsafe(32))
-                print("Se creó la cuenta 'admin'. Ponle contraseña con: flask --app run crear-admin")
-                db.session.add(admin)
-                db.session.commit()
-            else:
-                cambios_admin = False
-                if not admin.isAdmin:
-                    # Cubre bases de datos que ya existían antes de que se
-                    # agregara la columna isAdmin: la cuenta 'admin' siempre
-                    # debe quedar marcada como administradora.
+                admin = User.query.filter_by(nameUser='admin').first()
+                if admin:
+                    # Cubre bases de datos anteriores a la columna isAdmin.
                     admin.isAdmin = True
-                    cambios_admin = True
-                if not admin.activo:
-                    # La cuenta 'admin' nunca debe quedar bloqueada, aunque
-                    # alguien la hubiera desactivado por error.
-                    admin.activo = True
-                    cambios_admin = True
-                if cambios_admin:
-                    db.session.commit()
+                else:
+                    # Antes nacía con la contraseña '123': en una instalación
+                    # nueva cualquiera podía entrar primero como admin. Ahora
+                    # nace con una contraseña al azar que nadie conoce; para
+                    # usarla hay que ponerle una con `flask --app run crear-admin`.
+                    admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
+                    admin.set_password(secrets.token_urlsafe(32))
+                    print("Se creó la cuenta 'admin'. Ponle contraseña con: flask --app run crear-admin")
+                    db.session.add(admin)
+                db.session.commit()
+            if not admin.activo:
+                # La cuenta administradora nunca debe quedar bloqueada, aunque
+                # alguien la hubiera desactivado por error.
+                admin.activo = True
+                db.session.commit()
 
             # Las contraseñas ahora se guardan encriptadas (hash), nunca en
             # texto plano. Esto encripta, sin pedirle nada a nadie, las

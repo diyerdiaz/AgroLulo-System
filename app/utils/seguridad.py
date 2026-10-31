@@ -34,6 +34,24 @@ def errores_contrasena(contrasena, nombre_usuario=None):
     return errores
 
 
+NOMBRE_MIN = 3
+NOMBRE_MAX = 30
+_PATRON_NOMBRE = re.compile(r'^[\w.-]+(?: [\w.-]+)*$')
+# Nadie puede hacerse pasar por la administración con estos nombres.
+_NOMBRES_RESERVADOS = {'admin', 'administrador', 'administrator', 'root', 'soporte'}
+
+
+def error_nombre_usuario(nombre):
+    """Devuelve qué tiene de malo un nombre de usuario nuevo, o None si está bien."""
+    if not NOMBRE_MIN <= len(nombre) <= NOMBRE_MAX:
+        return f'El nombre de usuario debe tener entre {NOMBRE_MIN} y {NOMBRE_MAX} caracteres.'
+    if not _PATRON_NOMBRE.match(nombre):
+        return 'El nombre de usuario solo puede tener letras, números, espacios, puntos, guiones y guiones bajos.'
+    if nombre.lower() in _NOMBRES_RESERVADOS:
+        return 'Ese nombre de usuario no está disponible.'
+    return None
+
+
 def mensaje_contrasena_invalida(errores):
     """Arma un solo mensaje claro a partir de la lista de reglas que faltan."""
     return 'La contraseña debe ' + ', '.join(errores[:-1]) + (' y ' if len(errores) > 1 else '') + errores[-1] + '.'
