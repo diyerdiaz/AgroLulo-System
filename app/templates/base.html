@@ -7,9 +7,13 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block titulo_pagina %}AgroLulo System{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/agrolulo-logo.svg') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/app/apple-touch-icon.png') }}">
+  <meta name="theme-color" content="#070908">
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css')}}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css')}}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+  <script src="{{ url_for('static', filename='js/instalar-app.js') }}" defer></script>
 </head>
 
 <body class="d-flex flex-column h-100 {% block body_class %}bg-light{% endblock %}">
