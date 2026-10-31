@@ -8,10 +8,6 @@
 
 <p align="center">
   <a href="https://agrolulo.proyecto.lol/"><b>🌐 Ver la aplicación en línea</b></a>
-  &nbsp;·&nbsp;
-  <a href="#-instálala-en-tu-celular">📱 Instalar en el celular</a>
-  &nbsp;·&nbsp;
-  <a href="#-correr-el-proyecto">💻 Correr el proyecto</a>
 </p>
 
 ---
@@ -32,168 +28,73 @@ Ayudar al campesino y al pequeño productor de lulo a llevar una contabilidad se
 de su cultivo, sin necesidad de saber de contabilidad, para que sepa en todo momento si su cultivo
 está siendo rentable.
 
-## ✨ ¿Qué puedes hacer?
+## 🔄 ¿Cómo funciona?
 
-### Para el cultivador
+Todo gira alrededor de cada **cultivo**. Primero creas tu lote y, a medida que trabajas en él, vas
+anotando lo que gastas, lo que cosechas y lo que te pagan. AgroLulo hace las cuentas por ti.
 
-- 🌱 **Registrar tus cultivos**: cada lote con sus hectáreas, cantidad de matas y fecha de siembra.
-- 💸 **Llevar el control de los gastos**: insumos y fertilizantes, jornales, transporte y todo lo que inviertes.
-- 🧺 **Anotar cada cosecha**: canastillas, kilos y precio según la calidad del lulo (grueso, parejo o riche).
-- 💰 **Seguir los pagos**: cuánto te han pagado de cada cosecha y cuánto te falta por cobrar.
-- 📅 **Organizar el calendario**: siembra, riego, fumigaciones, abonadas, cosechas y demás labores del cultivo.
-- 📊 **Ver tus ganancias reales**: un panel con gráficos de ingresos, gastos y utilidad por cultivo.
-- 🧑‍🌾 **Aprender con Don Pancho**: un guía que explica la página a las personas nuevas y pregunta por los trabajos pendientes.
-- 🔑 **Recuperar tu cuenta**: un código de 6 dígitos llega a tu correo si olvidas la contraseña.
+```mermaid
+flowchart LR
+    A[Creas tu cuenta] --> B[Registras tu cultivo]
+    B --> C[Anotas los gastos]
+    B --> D[Anotas las cosechas]
+    D --> E[Registras los pagos]
+    C --> F[Ves tus ganancias]
+    E --> F
+```
 
-### Para el administrador
+### 1. Crea tu cuenta
 
-- 👥 **Administrar las cuentas**: crear, bloquear, activar y eliminar usuarios.
-- 📈 **Ver el uso de la plataforma**: un panel con porcentajes generales, sin mostrar el dinero de nadie.
+Te registras con un nombre de usuario, un correo y una contraseña. Al entrar por primera vez te
+recibe **Don Pancho Lulero**, un personaje que te muestra cada parte de la página. Si olvidas la
+contraseña, te llega un código de 6 dígitos al correo para crear una nueva.
 
-## 📱 Instálala en tu celular
+### 2. Registra tu cultivo
 
-AgroLulo se instala como una app desde la misma página, sin descargar un APK.
+Cada lote se registra con su nombre, sus hectáreas y su fecha de siembra. También puedes escribir
+cuántas matas sembraste; si no lo haces, la página calcula unas 680 por hectárea. Puedes tener
+varios cultivos, y cada uno lleva sus propias cuentas.
 
-| Celular | Cómo instalarla |
+### 3. Anota tus gastos
+
+Cada vez que inviertes en el cultivo, registras el valor, la fecha y el tipo de gasto:
+
+- 🌿 Insumos y fertilizantes
+- 👷 Mano de obra (jornales)
+- 🚚 Transporte y logística
+- 📦 Otros gastos
+
+El gasto aparece también en el calendario, en el día que elegiste.
+
+### 4. Registra tus cosechas
+
+En cada cogida anotas las canastillas, su peso y su precio según la calidad del lulo: **grueso**,
+**parejo** o **riche**. Si sobran kilos sueltos, también los puedes agregar. La página calcula los
+kilos y el dinero de la cosecha.
+
+### 5. Lleva el control de los pagos
+
+Aquí ves cuánto te han pagado de cada cosecha y cuánto te falta por cobrar. Cuando registras un
+pago, se abona primero a la cosecha más antigua y, si sobra dinero, pasa a la siguiente.
+
+### 6. Organiza tu calendario
+
+Cada cultivo tiene un calendario mensual. Al tocar un día, puedes anotar fumigaciones, riegos,
+abonadas, jornales y otras labores. Los trabajos se pueden marcar como hechos, y Don Pancho te
+pregunta por los que quedaron pendientes.
+
+### 7. Mira tus resultados
+
+El **Dashboard** reúne la información de todos tus cultivos: hectáreas, matas, producción, ingresos,
+gastos, ganancias y rentabilidad. Los gráficos muestran la producción por cultivo, en qué se va el
+dinero y cómo van los ingresos mes a mes. Cada cultivo también tiene su propio panel.
+
+## 👥 ¿Quién usa la página?
+
+| Tipo de cuenta | Qué puede hacer |
 |---|---|
-| **Android (Chrome)** | Abre la página y toca **Instalar app** |
-| **iPhone (Safari)** | Toca **Compartir** y luego **Agregar a inicio** |
-
-Queda con su propio icono y se abre a pantalla completa. Necesita internet para mostrar tus datos,
-y estos nunca se guardan en el celular.
-
-## 🔒 Seguridad
-
-- 🔐 Las contraseñas se guardan cifradas con hash, nunca como texto.
-- 👤 Cada cuenta ve únicamente la información de sus propios cultivos.
-- 🛡️ Hay protección contra CSRF y XSS, y cabeceras de seguridad en todas las respuestas.
-- 🚫 Los intentos fallidos de inicio de sesión, los registros y las recuperaciones tienen límites.
-- 🚪 Al cambiar la contraseña se cierran las sesiones abiertas en otros dispositivos.
-- 🔑 Las claves y datos privados van en variables de entorno, nunca en el código.
-
-## 🛠️ Herramientas utilizadas
-
-<p>
-  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
-  <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy">
-  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/badge/Jinja-B41717?style=for-the-badge&logo=jinja&logoColor=white" alt="Jinja">
-  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5">
-  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css&logoColor=white" alt="CSS3">
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
-  <img src="https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap">
-  <img src="https://img.shields.io/badge/Chart.js-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white" alt="Chart.js">
-  <img src="https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" alt="PWA">
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/Gunicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white" alt="Gunicorn">
-  <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git">
-  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
-</p>
-
-| Herramienta | Para qué se usó |
-|---|---|
-| **Python** | Lenguaje principal del proyecto |
-| **Flask** | Framework web que mueve toda la aplicación |
-| **Flask-Login y Flask-WTF** | Inicio de sesión, cuentas de usuario y protección CSRF |
-| **SQLAlchemy** | Manejo de los datos (cultivos, gastos, cosechas, pagos) |
-| **SQLite** | Base de datos donde se guarda la información |
-| **Jinja** | Plantillas de las páginas |
-| **HTML, CSS y JavaScript** | Diseño e interacción de la interfaz |
-| **Bootstrap y Bootstrap Icons** | Estilos, diseño adaptable a celular e íconos |
-| **Chart.js** | Gráficos de ingresos, gastos y ganancias |
-| **PWA** | Instalación de la página como app en el celular |
-| **Docker y Gunicorn** | Empaquetado y publicación de la aplicación en el servidor |
-| **pytest y GitHub Actions** | Pruebas automáticas del código |
-| **Git y GitHub** | Control de versiones del código |
-| **Inteligencia artificial** | Apoyo en el diseño, la programación y las pruebas |
-
-## 💻 Correr el proyecto
-
-Necesitas **Python 3.11 o superior**. Estos comandos son para Linux o macOS.
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env
-python run.py
-```
-
-La página abre en <http://127.0.0.1:5000>. Antes de arrancarla, pon una `SECRET_KEY` propia en el
-archivo `.env`.
-
-La cuenta `admin` nace con una contraseña aleatoria. Para ponerle la tuya:
-
-```bash
-flask --app run crear-admin
-```
-
-### Con Docker
-
-Arranca aunque falten variables, pero conviene crear primero el archivo `.env`: sin `SECRET_KEY`
-las sesiones se cierran en cada reinicio, y sin los datos de correo no se puede recuperar la contraseña.
-
-```bash
-docker compose up --build
-```
-
-Por seguridad, el puerto 5000 solo queda disponible en el mismo equipo. En un servidor, la carpeta
-`instance` debe pertenecer al usuario 1000, y el acceso desde internet debe pasar por un proxy con HTTPS.
-
-### Variables de entorno
-
-Van en el archivo `.env`, que nunca se sube a GitHub. Hay un ejemplo en [.env.example](.env.example).
-
-| Variable | Para qué sirve | ¿Obligatoria? |
-|---|---|---|
-| `SECRET_KEY` | Clave que protege las sesiones | En producción |
-| `MAIL_USERNAME` | Cuenta de Gmail que envía los correos | Para enviar correos |
-| `MAIL_PASSWORD` | Contraseña de aplicación de Gmail | Para enviar correos |
-| `MAIL_SERVER` | Servidor de correo | No: `smtp.gmail.com` |
-| `MAIL_PORT` | Puerto del servidor de correo | No: `587` |
-| `MAIL_SENDER` | Remitente que aparece en los correos | No: usa `MAIL_USERNAME` |
-| `APP_URL` | Dirección pública de la página | En producción |
-| `DETRAS_DE_HTTPS` | Ponla en `1` solo detrás de un proxy con HTTPS | En producción |
-
-> [!IMPORTANT]
-> Para `MAIL_PASSWORD`, activa la verificación en dos pasos en Gmail y crea una
-> [contraseña de aplicación](https://myaccount.google.com/apppasswords). No uses la contraseña
-> normal de tu correo. Con `DETRAS_DE_HTTPS=1` y sin HTTPS, nadie podrá iniciar sesión.
-
-### Comandos útiles
-
-| Comando | Qué hace |
-|---|---|
-| `pytest` | Corre las pruebas automáticas |
-| `flask --app run crear-admin` | Crea la cuenta administradora o le cambia la contraseña |
-| `flask --app run datos-demo` | Crea usuarios imaginarios para probar (no usar en producción) |
-| `flask --app run datos-demo --borrar` | Borra esos usuarios imaginarios |
-| `flask --app run recordatorios-muestra CORREO` | Envía los 7 correos de ejemplo de los recordatorios |
-
-## 📁 Estructura del proyecto
-
-```text
-.
-├── app/
-│   ├── ml/          # Conteo de matas en fotos (módulo sin activar)
-│   ├── models/      # Modelos de la base de datos
-│   ├── routes/      # Rutas de cada sección
-│   ├── static/      # CSS, JavaScript, imágenes y archivos de la app
-│   ├── templates/   # Páginas HTML y correos
-│   └── utils/       # Seguridad, correo, cálculos y otras ayudas
-├── docs/            # Imágenes de esta documentación
-├── tests/           # Pruebas automáticas
-├── config.py        # Configuración de la aplicación
-├── run.py           # Arranque local
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## 🤖 Desarrollado con apoyo de la inteligencia artificial
-
-Este proyecto se construyó con el **apoyo de herramientas de inteligencia artificial**, que
-ayudaron en el diseño, la programación, las pruebas y la mejora continua de la aplicación.
+| 🧑‍🌾 **Cultivador** | Maneja sus cultivos, gastos, cosechas, pagos y calendario. Solo ve su propia información |
+| 🛠️ **Administrador** | Crea, bloquea, activa y elimina cuentas, y ve cómo se usa la plataforma con porcentajes generales, sin ver el dinero de nadie |
 
 ## 📄 Licencia
 
