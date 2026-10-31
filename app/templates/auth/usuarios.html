@@ -294,7 +294,8 @@
                       </form>
                       {% endif %}
                       <form method="post" action="{{ url_for('auth.usuario_eliminar', id=u.idUser) }}" class="d-inline"
-                        onsubmit="return confirm('¿Seguro que deseas eliminar la cuenta \'{{ u.nameUser }}\'? Se borrará junto con todos sus cultivos, ingresos, gastos, pagos y calendario. Esta acción no se puede deshacer.');">
+                        data-nombre="{{ u.nameUser }}"
+                        onsubmit="return confirm('¿Seguro que deseas eliminar la cuenta \'' + this.dataset.nombre + '\'? Se borrará junto con todos sus cultivos, ingresos, gastos, pagos y calendario. Esta acción no se puede deshacer.');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" title="Eliminar cuenta">
                           <i class="bi bi-trash-fill me-1"></i> Eliminar
