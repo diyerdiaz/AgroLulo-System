@@ -169,16 +169,19 @@ def recuperar_codigo():
         registro = (CodigoRecuperacion.query.filter_by(idUser=user.idUser)
                     .order_by(CodigoRecuperacion.creado.desc()).first())
 
-    # Además del límite de cada código, los fallos se cuentan por cuenta:
-    # pedir un código nuevo no le da a un atacante más intentos.
+    # Además del límite de cada código, los fallos se cuentan por conexión y
+    # por cuenta: pedir un código nuevo no le da a un atacante más intentos.
+    ip = ip_solicitante()
     vigente = (registro is not None and registro.expira > _ahora()
                and registro.intentos < CODIGO_INTENTOS_MAXIMOS
-               and segundos_bloqueo_restante(clave_cuenta, 'codigo') == 0)
+               and segundos_bloqueo_restante(ip, 'codigo') == 0
+               and segundos_bloqueo_restante(clave_cuenta, 'codigo_cuenta') == 0)
     if not vigente or not check_password_hash(registro.codigo_hash, codigo):
         if vigente:
             registro.intentos += 1
             db.session.commit()
-            registrar_intento(clave_cuenta, 'codigo')
+            registrar_intento(ip, 'codigo')
+            registrar_intento(clave_cuenta, 'codigo_cuenta')
         flash('El código es incorrecto o ya venció. Revísalo o solicita uno nuevo.', 'danger')
         return render_template("auth/login.html", show_codigo=True)
 
@@ -221,7 +224,7 @@ def recuperar_nueva():
     user.set_password(nueva_password)
     CodigoRecuperacion.query.filter_by(idUser=user.idUser).delete()
     db.session.commit()
-    limpiar_intentos(f'cuenta:{user.idUser}', 'codigo')
+    limpiar_intentos(f'cuenta:{user.idUser}', 'codigo_cuenta')
     session.pop('recuperar_codigo_ok', None)
     session.pop('recuperar_para', None)
     flash('¡Listo! Tu contraseña se cambió. Ya puedes iniciar sesión con la nueva.', 'success')

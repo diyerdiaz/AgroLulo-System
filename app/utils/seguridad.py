@@ -92,6 +92,9 @@ LIMITES = {
     'registro': (5, 60 * 60),
     'recuperar': (10, 60 * 60),
     'codigo': (10, 24 * 60 * 60),
+    # Más alto que el de la IP: si fuera igual, un atacante podría agotarlo
+    # a propósito y dejar a la persona sin poder recuperar su cuenta.
+    'codigo_cuenta': (50, 24 * 60 * 60),
 }
 DIAS_CONSERVAR_INTENTOS = 2
 
