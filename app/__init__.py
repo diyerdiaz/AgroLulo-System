@@ -52,7 +52,8 @@ def create_app(config_extra=None):
     compress.init_app(app)
     csrf.init_app(app)
 
-    from app.utils.seguridad import agregar_cabeceras_seguridad
+    from app.utils.seguridad import agregar_cabeceras_seguridad, limitar_formularios_de_texto
+    app.before_request(limitar_formularios_de_texto)
     app.after_request(agregar_cabeceras_seguridad)
     if app.config['DETRAS_DE_HTTPS']:
         # Sin esto, todas las visitas parecerían venir de la IP del proxy.
