@@ -46,3 +46,27 @@ def test_detras_de_https_activa_cookie_segura_hsts_e_ip_real():
     app.wsgi_app.app = app_final
     app.wsgi_app(environ, lambda *a: None)
     assert capturado['ip'] == '203.0.113.9'
+
+
+def test_las_paginas_privadas_no_se_guardan_en_el_navegador(logged_client):
+    assert logged_client.get('/perfil').headers['Cache-Control'] == 'no-store'
+
+
+def test_los_archivos_estaticos_si_se_pueden_guardar(logged_client):
+    respuesta = logged_client.get('/static/css/style.css')
+    assert respuesta.headers.get('Cache-Control') != 'no-store'
+
+
+def test_un_texto_enorme_no_se_guarda(logged_client, user):
+    from app.models.actividad import ActividadCultivo
+    from tests.conftest import crear_cultivo
+    cultivo = crear_cultivo(user)
+    respuesta = logged_client.post(f'/calendario/{cultivo.idCultivo}/actividad', data={
+        'tipo': 'otro', 'fecha': '2026-01-15', 'nota': 'x' * 40000,
+    })
+    assert respuesta.status_code == 413
+    assert ActividadCultivo.query.count() == 0
+    logged_client.post(f'/calendario/{cultivo.idCultivo}/actividad', data={
+        'tipo': 'otro', 'fecha': '2026-01-15', 'nota': 'x' * 1000,
+    })
+    assert ActividadCultivo.query.count() == 1

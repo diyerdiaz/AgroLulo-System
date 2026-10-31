@@ -28,6 +28,10 @@ class Config:
     # TIMEOUT" / "Perhaps out of memory?"). 10 MB es de sobra para una
     # foto de celular en JPG/PNG.
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+    # Límite para los formularios de texto (notas, nombres...). Sin esto,
+    # alguien podría llenar la base de datos con textos enormes. No afecta la
+    # subida de fotos, que usa MAX_CONTENT_LENGTH.
+    MAX_FORMULARIO_TEXTO = 16 * 1024
 
     # El token CSRF dura lo mismo que la sesión. Con el límite por defecto
     # (1 hora), un formulario abierto un buen rato fallaría al enviarse.

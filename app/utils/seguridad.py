@@ -1,7 +1,8 @@
 import re
 from datetime import datetime, timedelta, timezone
 
-from flask import current_app, request
+from flask import abort, current_app, request
+from flask_login import current_user
 
 from app import db
 from app.models.intento_acceso import IntentoAcceso
@@ -73,12 +74,23 @@ POLITICA_CONTENIDO = '; '.join([
 ])
 
 
+def limitar_formularios_de_texto():
+    """Rechaza con 413 los formularios de texto demasiado grandes."""
+    if (request.mimetype == 'application/x-www-form-urlencoded'
+            and (request.content_length or 0) > current_app.config['MAX_FORMULARIO_TEXTO']):
+        abort(413)
+
+
 def agregar_cabeceras_seguridad(respuesta):
     """Le dice al navegador qué no debe permitir con esta página."""
     respuesta.headers['Content-Security-Policy'] = POLITICA_CONTENIDO
     respuesta.headers['X-Frame-Options'] = 'DENY'
     respuesta.headers['X-Content-Type-Options'] = 'nosniff'
     respuesta.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # Las páginas de una cuenta no se guardan en el navegador: en un celular
+    # o computador compartido, otra persona podría verlas con el botón Atrás.
+    if current_user.is_authenticated and request.endpoint != 'static':
+        respuesta.headers['Cache-Control'] = 'no-store'
     if current_app.config.get('DETRAS_DE_HTTPS'):
         respuesta.headers['Strict-Transport-Security'] = 'max-age=31536000'
     return respuesta
