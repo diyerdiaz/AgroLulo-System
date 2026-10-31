@@ -25,6 +25,11 @@ def test_el_service_worker_se_sirve_desde_la_raiz(client):
     assert respuesta.headers['Cache-Control'] == 'no-cache'
 
 
+def test_el_navegador_reutiliza_los_archivos_estaticos(client):
+    respuesta = client.get('/static/css/style.css')
+    assert 'max-age=3600' in respuesta.headers['Cache-Control']
+
+
 def test_las_paginas_enlazan_el_manifest_y_el_boton(client):
     for url in ('/', '/login'):
         html = client.get(url).get_data(as_text=True)

@@ -2,6 +2,7 @@ import ipaddress
 import re
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
+from threading import Lock
 from time import monotonic
 
 from flask import abort, current_app, request
@@ -173,6 +174,7 @@ _PROGRAMAS_DE_ATAQUE = re.compile(
 PETICIONES_POR_MINUTO = 120
 _MAXIMO_IPS_EN_MEMORIA = 10000
 _visitas_recientes = defaultdict(deque)
+_candado_visitas = Lock()  # Gunicorn atiende varias peticiones a la vez
 
 
 def _ip_bloqueable(ip):
@@ -187,14 +189,15 @@ def _ip_bloqueable(ip):
 
 
 def _demasiadas_visitas(ip):
-    if len(_visitas_recientes) > _MAXIMO_IPS_EN_MEMORIA:
-        _visitas_recientes.clear()
-    ahora = monotonic()
-    visitas = _visitas_recientes[ip]
-    while visitas and ahora - visitas[0] > 60:
-        visitas.popleft()
-    visitas.append(ahora)
-    return len(visitas) > PETICIONES_POR_MINUTO
+    with _candado_visitas:
+        if len(_visitas_recientes) > _MAXIMO_IPS_EN_MEMORIA:
+            _visitas_recientes.clear()
+        ahora = monotonic()
+        visitas = _visitas_recientes[ip]
+        while visitas and ahora - visitas[0] > 60:
+            visitas.popleft()
+        visitas.append(ahora)
+        return len(visitas) > PETICIONES_POR_MINUTO
 
 
 def bloquear_bots():

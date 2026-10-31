@@ -35,12 +35,14 @@ EXPOSE 5000
 # petición. Con un solo worker se evita ese problema (si defines
 # SECRET_KEY fija en tu .env, sí podrías subir --workers de forma segura).
 #
-# --max-requests: reinicia el worker automáticamente cada ~300 peticiones
-# (con --max-requests-jitter para que no coincida siempre en el mismo
-# número). Es una red de seguridad: si algo va dejando memoria sin
-# liberar poco a poco (por ejemplo, en el análisis de fotos con YOLO),
-# esto evita que se acumule indefinidamente hasta tumbar el servidor por
-# falta de memoria, como se vio en los logs ("WORKER TIMEOUT" / "Perhaps
-# out of memory?").
+# --threads: el worker atiende varias peticiones a la vez. Con uno solo,
+# mientras se crea una contraseña toda la página queda esperando, y cada
+# archivo CSS o JS hace fila detrás del anterior.
+#
+# --max-requests: reinicia el worker cada ~5000 peticiones (con
+# --max-requests-jitter para que no coincida siempre en el mismo número).
+# Es una red de seguridad: si algo va dejando memoria sin liberar poco a
+# poco, esto evita que se acumule hasta tumbar el servidor. Cada página pide
+# unos 12 archivos, así que un número bajo reiniciaría la app a cada rato.
 ENTRYPOINT ["sh", "/app/docker/entrypoint.sh"]
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "--max-requests", "300", "--max-requests-jitter", "50", "run:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "4", "--timeout", "120", "--max-requests", "5000", "--max-requests-jitter", "500", "run:app"]
