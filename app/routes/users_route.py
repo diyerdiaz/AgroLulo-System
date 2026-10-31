@@ -1,7 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.users import User
 from app.utils.correo import correo_valido
-from app.utils.seguridad import errores_contrasena, mensaje_contrasena_invalida
+from app.utils.seguridad import (
+    errores_contrasena, mensaje_contrasena_invalida,
+    ip_solicitante, segundos_bloqueo_restante, registrar_intento,
+)
 from app import db
 
 # NOTA: este blueprint alguna vez tuvo un sistema completo de gestión de
@@ -20,6 +23,12 @@ bp = Blueprint('user', __name__, url_prefix='/User')
 def add():
     from flask import flash
     if request.method == 'POST':
+        # Evita que un programa llene la base de datos con cuentas falsas.
+        ip = ip_solicitante()
+        if segundos_bloqueo_restante(ip, 'registro') > 0:
+            flash("Se crearon demasiadas cuentas desde esta conexión. Intenta de nuevo en una hora.", "danger")
+            return render_template('auth/login.html', show_register=True)
+
         nameUser = request.form['nameUser'].strip()
         passwordUser = request.form['passwordUser']
         emailUser = request.form.get('emailUser', '').strip().lower()
@@ -53,6 +62,7 @@ def add():
         new_user.set_password(passwordUser)
         db.session.add(new_user)
         db.session.commit()
+        registrar_intento(ip, 'registro')
         flash("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.", "success")
         return redirect(url_for('auth.login'))
     return render_template('auth/login.html', show_register=True)

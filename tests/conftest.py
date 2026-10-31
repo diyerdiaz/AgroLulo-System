@@ -2,7 +2,6 @@ import pytest
 from datetime import date
 
 from app import create_app, db
-from app.utils import seguridad
 
 
 @pytest.fixture
@@ -12,11 +11,10 @@ def app():
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'SECRET_KEY': 'clave-de-pruebas',
+        # Los tests envían formularios directo, sin cargar antes la página.
+        # La protección se prueba aparte en tests/test_csrf.py.
+        'WTF_CSRF_ENABLED': False,
     })
-    # El bloqueo por intentos fallidos se guarda en memoria del módulo:
-    # se limpia para que un test no afecte al siguiente.
-    seguridad._intentos_fallidos.clear()
-    seguridad._bloqueado_hasta.clear()
     with app.app_context():
         yield app
         db.session.remove()
@@ -48,7 +46,7 @@ def crear_cultivo(user, nombre='Lote de prueba'):
 
 def iniciar_sesion(client, user):
     with client.session_transaction() as s:
-        s['_user_id'] = str(user.idUser)
+        s['_user_id'] = user.get_id()
         s['_fresh'] = True
 
 

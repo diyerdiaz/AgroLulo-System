@@ -6,7 +6,6 @@ from app.utils.helpers import cultivo_de_usuario
 from app.utils.recordatorios import pendientes_para_preguntar, posponer_pregunta
 from app import db
 import calendar
-import json
 from datetime import date, datetime
 
 bp = Blueprint('calendario', __name__, url_prefix='/calendario')
@@ -51,6 +50,10 @@ def ver(id):
     elif month > 12:
         month = 1
         year += 1
+
+    # Un año que no existe en una dirección escrita a mano vuelve al actual.
+    if not 1 <= year <= 9999:
+        year = hoy.year
 
     cal = calendar.Calendar(firstweekday=0)  # Semanas de Lunes a Domingo
     semanas = cal.monthdayscalendar(year, month)
@@ -168,7 +171,7 @@ def ver(id):
         anio_siguiente=anio_siguiente,
         fechas_destacadas=fechas_destacadas,
         tipos_actividad=TIPOS_SELECCIONABLES,
-        actividades_por_dia_json=json.dumps(actividades_por_dia),
+        actividades_por_dia=actividades_por_dia,
         todas_actividades=todas_actividades,
     )
 

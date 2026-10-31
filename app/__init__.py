@@ -1,8 +1,10 @@
-from flask import Flask
+from flask import Flask, flash, redirect, url_for
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_compress import Compress
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from sqlalchemy import text
 import os
 import secrets
@@ -13,6 +15,9 @@ login_manager = LoginManager()
 # de enviarlas al navegador. Esto reduce bastante el peso de cada página sin
 # tener que tocar los archivos: mismo contenido, menos bytes viajando.
 compress = Compress()
+# Exige un token secreto en cada POST: una página ajena no lo conoce, así que
+# no puede enviar formularios usando la sesión de quien la esté visitando.
+csrf = CSRFProtect()
 
 
 def _asegurar_columnas(tabla, columnas):
@@ -45,23 +50,27 @@ def create_app(config_extra=None):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     compress.init_app(app)
+    csrf.init_app(app)
+
+    from app.utils.seguridad import agregar_cabeceras_seguridad
+    app.after_request(agregar_cabeceras_seguridad)
+    if app.config['DETRAS_DE_HTTPS']:
+        # Sin esto, todas las visitas parecerían venir de la IP del proxy.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     @login_manager.user_loader
-    def load_user(idUser):
+    def load_user(id_sesion):
         from .models.users import User
-        user = User.query.get(int(idUser))
+        user = User.query.get(int(id_sesion.partition(':')[0]))
         # Si al administrador le da por bloquear una cuenta que ya tenía
         # una sesión abierta, que quede afuera de una vez (no solo se le
-        # impide volver a iniciar sesión).
-        if user and not user.activo:
+        # impide volver a iniciar sesión). Lo mismo si la contraseña cambió
+        # después de abrir esta sesión (ver User.get_id).
+        if user and (not user.activo or user.get_id() != id_sesion):
             return None
         return user
 
     # Register blueprints
-    # NOTA: el blueprint "users_route_async" (rutas /UserAsync/...) se quitó
-    # de aquí porque era una API JSON que ninguna página de AgroLulo llegó a
-    # usar nunca (no había ningún botón, formulario ni script que la
-    # llamara); era código muerto que no cumplía ninguna función real.
     from app.routes import (
         users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route,
         landing_route
@@ -79,6 +88,13 @@ def create_app(config_extra=None):
     # Comandos de consola (flask <comando>): crear-admin, datos-demo, recordatorios.
     from app import comandos
     comandos.registrar(app)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        # Pasa si la sesión venció con el formulario abierto, o si el envío
+        # no salió de esta página. Nada se guarda: se le pide intentar de nuevo.
+        flash('Tu sesión venció o el formulario ya no es válido. Intenta de nuevo.', 'warning')
+        return redirect(url_for('auth.login'))
 
     @app.errorhandler(Exception)
     def handle_error(e):

@@ -23,7 +23,10 @@
     return fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+      }
     }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r;

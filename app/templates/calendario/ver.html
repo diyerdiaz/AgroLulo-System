@@ -252,6 +252,7 @@
 
         <form id="formNuevaActividad" method="POST"
           action="{{ url_for('calendario.agregar_actividad', id=cultivo.idCultivo) }}" class="d-none mt-3 pt-3 border-top border-secondary border-opacity-25">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="fecha" id="inputFechaActividad">
           <input type="hidden" name="tipo" id="inputTipoActividad">
           <input type="hidden" name="year" value="{{ year }}">
@@ -326,12 +327,14 @@
             {% if a.seguimiento %}
               {% if a.hecha %}
               <form method="POST" action="{{ url_for('calendario.marcar_pendiente', id=cultivo.idCultivo, actividad_id=a.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Desmarcar (volver a pendiente)">
                   <i class="bi bi-arrow-counterclockwise"></i>
                 </button>
               </form>
               {% else %}
               <form method="POST" action="{{ url_for('calendario.marcar_hecha', id=cultivo.idCultivo, actividad_id=a.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" title="Marcar como hecho">
                   <i class="bi bi-check-lg"></i> Listo
                 </button>
@@ -341,6 +344,7 @@
             {% if a.eliminable %}
             <form method="POST" action="{{ url_for('calendario.eliminar_actividad', id=cultivo.idCultivo, actividad_id=a.id) }}"
               onsubmit="return confirm('¿Eliminar esta etiqueta del calendario?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="year" value="{{ a.fecha.year }}">
               <input type="hidden" name="month" value="{{ a.fecha.month }}">
               <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Eliminar">
@@ -364,10 +368,12 @@
 </div>
 
 <!-- Formulario oculto reutilizado para marcar una etiqueta como hecha / pendiente -->
-<form id="formMarcarActividad" method="POST" class="d-none"></form>
+<form id="formMarcarActividad" method="POST" class="d-none">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form>
 
 <!-- Formulario oculto reutilizado para eliminar una etiqueta -->
 <form id="formEliminarActividad" method="POST" class="d-none">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="year" value="{{ year }}">
   <input type="hidden" name="month" value="{{ month }}">
 </form>
@@ -402,7 +408,7 @@
   });
 
   // ===== Etiquetas del calendario (fumigación, trabajo, cosecha, etc.) =====
-  const actividadesPorDia = {{ actividades_por_dia_json|safe }};
+  const actividadesPorDia = {{ actividades_por_dia|tojson }};
   const urlEliminarBase = "{{ url_for('calendario.ver', id=cultivo.idCultivo) }}/actividad";
   const hoyIso = "{{ hoy.strftime('%Y-%m-%d') }}";
 
