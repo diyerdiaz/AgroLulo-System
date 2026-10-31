@@ -74,10 +74,11 @@ def create_app(config_extra=None):
     # Register blueprints
     from app.routes import (
         users_route, auth, cultivos_route, calendario_route, gastos_route, ingresos_route, pagos_route,
-        landing_route
+        landing_route, pwa_route
     )
 
     app.register_blueprint(landing_route.bp)
+    app.register_blueprint(pwa_route.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(users_route.bp)
     app.register_blueprint(cultivos_route.bp)

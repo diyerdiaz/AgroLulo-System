@@ -232,7 +232,7 @@ def recuperar_nueva():
 
 # Páginas a las que sí se puede entrar mientras la cuenta está obligada a
 # cambiar su contraseña (todo lo demás redirige a la pantalla de cambio).
-_PERMITIDAS_SIN_CAMBIAR = {'auth.cambiar_contrasena', 'auth.logout', 'static'}
+_PERMITIDAS_SIN_CAMBIAR = {'auth.cambiar_contrasena', 'auth.logout', 'static', 'pwa.service_worker', 'pwa.offline'}
 
 
 @bp.before_app_request
