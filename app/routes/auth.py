@@ -50,7 +50,8 @@ def login():
                 flash('Tu cuenta ya fue creada, pero está esperando a que el administrador la active. Intenta iniciar sesión más tarde.', 'warning')
                 return redirect(url_for('auth.login'))
 
-            limpiar_intentos(ip)
+            # Los fallos de esta IP NO se borran aquí: si no, bastaría con entrar
+            # a una cuenta propia cada pocos intentos para no bloquearse nunca.
             # Si la contraseña con la que entró no cumple las reglas de
             # seguridad actuales, también se le obliga a cambiarla.
             if errores_contrasena(passwordUser, user.nameUser) and not user.debe_cambiar_password:
