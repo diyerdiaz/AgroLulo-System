@@ -14,15 +14,19 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_SENDER: ${MAIL_SENDER:-}
+      # Cuenta administradora: se aplica una sola vez, en el primer arranque.
+      # Si después cambias la contraseña en la página, esa es la que queda.
+      ADMIN_USUARIO: ${ADMIN_USUARIO:-admin}
+      ADMIN_CORREO: ${ADMIN_CORREO:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       APP_URL: ${APP_URL:-http://127.0.0.1:5000}
       # Este archivo es para publicar la página detrás de un proxy con HTTPS.
       # Para probarlo sin HTTPS fuera de localhost, ponlo en 0 en el .env.
       DETRAS_DE_HTTPS: ${DETRAS_DE_HTTPS:-1}
-    ports:
-      # Solo desde el mismo servidor: desde internet se entra por el proxy con
-      # HTTPS. Abierto a todos, cualquiera podría saltarse el proxy y
-      # falsificar su IP para evitar los bloqueos de intentos.
-      - "127.0.0.1:5000:5000"
+    # Ningún puerto se publica en el servidor: solo el proxy con HTTPS llega a
+    # la app por la red interna de Docker. Desde internet no hay otra entrada.
+    expose:
+      - "5000"
     volumes:
       # Guarda la base de datos SQLite (flaskdb.sqlite) fuera del
       # contenedor, en la carpeta "instance" del proyecto, para que tus

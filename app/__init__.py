@@ -170,9 +170,13 @@ def create_app(config_extra=None):
                     # usarla hay que ponerle una con `flask --app run crear-admin`.
                     admin = User(nameUser='admin', isAdmin=True, activo=True, debe_cambiar_password=True)
                     admin.set_password(secrets.token_urlsafe(32))
-                    print("Se creó la cuenta 'admin'. Ponle contraseña con: flask --app run crear-admin")
+                    print("Se creó la cuenta 'admin'. Ponle contraseña con ADMIN_PASSWORD o con: flask --app run crear-admin")
                     db.session.add(admin)
                 db.session.commit()
+
+            from app.utils.administrador import aplicar_admin_del_entorno
+            aplicar_admin_del_entorno(admin)
+
             if not admin.activo:
                 # La cuenta administradora nunca debe quedar bloqueada, aunque
                 # alguien la hubiera desactivado por error.

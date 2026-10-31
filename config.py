@@ -55,6 +55,11 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     MAIL_SENDER = os.environ.get('MAIL_SENDER') or os.environ.get('MAIL_USERNAME', '')
+    # Datos de la cuenta administradora para el primer despliegue. Se aplican
+    # una sola vez (ver utils/administrador.py).
+    ADMIN_USUARIO = os.environ.get('ADMIN_USUARIO', '')
+    ADMIN_CORREO = os.environ.get('ADMIN_CORREO', '')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '')
     # Dirección pública de la página. Se usa en los botones de los correos
     # (por ejemplo "Ya lo hice" en los recordatorios del calendario), que se
     # abren desde el celular de la persona y no saben dónde vive la página.

@@ -14,6 +14,8 @@ def app():
         # Los tests envían formularios directo, sin cargar antes la página.
         # La protección se prueba aparte en tests/test_csrf.py.
         'WTF_CSRF_ENABLED': False,
+        # Los tests no dependen de lo que tenga el .env de cada computador.
+        'ADMIN_PASSWORD': '',
     })
     with app.app_context():
         yield app
