@@ -50,9 +50,11 @@ def create_app(config_extra=None):
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     compress.init_app(app)
-    csrf.init_app(app)
 
-    from app.utils.seguridad import agregar_cabeceras_seguridad, limitar_formularios_de_texto
+    from app.utils.seguridad import agregar_cabeceras_seguridad, bloquear_bots, limitar_formularios_de_texto
+    # Va antes que todo lo demás, para no gastar trabajo en una IP bloqueada.
+    app.before_request(bloquear_bots)
+    csrf.init_app(app)
     app.before_request(limitar_formularios_de_texto)
     app.after_request(agregar_cabeceras_seguridad)
     if app.config['DETRAS_DE_HTTPS']:

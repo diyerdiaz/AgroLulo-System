@@ -1,5 +1,8 @@
+import ipaddress
 import re
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
+from time import monotonic
 
 from flask import abort, current_app, request
 from flask_login import current_user
@@ -107,6 +110,9 @@ LIMITES = {
     # Más alto que el de la IP: si fuera igual, un atacante podría agotarlo
     # a propósito y dejar a la persona sin poder recuperar su cuenta.
     'codigo_cuenta': (50, 24 * 60 * 60),
+    # Bots: tocar rutas trampa varias veces y, cuando ya cayó, 1 hora afuera.
+    'sondeo': (3, 60 * 60),
+    'bloqueo_ip': (1, 60 * 60),
 }
 DIAS_CONSERVAR_INTENTOS = 2
 
@@ -148,3 +154,67 @@ def limpiar_intentos(clave, accion='login'):
     intentos fallidos de esa acción."""
     IntentoAcceso.query.filter_by(accion=accion, clave=clave).delete(synchronize_session=False)
     db.session.commit()
+
+
+# --- Bloqueo automático de bots ---
+# Direcciones que esta página no tiene y que los bots prueban buscando huecos
+# de otros programas. Una persona normal nunca llega a ellas.
+_RUTAS_TRAMPA = re.compile(
+    r'\.(php|asp|aspx|env|git|sql|bak|aws)\b|wp-|wordpress|phpmyadmin|xmlrpc|cgi-bin',
+    re.IGNORECASE,
+)
+# Programas de ataque que se identifican a sí mismos.
+_PROGRAMAS_DE_ATAQUE = re.compile(
+    r'sqlmap|nikto|masscan|zgrab|nmap|nuclei|wpscan|dirbuster|gobuster|acunetix|nessus|hydra',
+    re.IGNORECASE,
+)
+# Peticiones por minuto de una misma IP, sin contar imágenes, CSS y JavaScript.
+# Vive en memoria porque guardar cada visita en la base de datos la haría lenta.
+PETICIONES_POR_MINUTO = 120
+_MAXIMO_IPS_EN_MEMORIA = 10000
+_visitas_recientes = defaultdict(deque)
+
+
+def _ip_bloqueable(ip):
+    """Sin un proxy delante, todas las visitas parecen venir de la misma IP y
+    se bloquearía a todo el mundo. Las direcciones internas tampoco se tocan."""
+    if not current_app.config.get('DETRAS_DE_HTTPS'):
+        return False
+    try:
+        return ipaddress.ip_address(ip).is_global
+    except ValueError:
+        return False
+
+
+def _demasiadas_visitas(ip):
+    if len(_visitas_recientes) > _MAXIMO_IPS_EN_MEMORIA:
+        _visitas_recientes.clear()
+    ahora = monotonic()
+    visitas = _visitas_recientes[ip]
+    while visitas and ahora - visitas[0] > 60:
+        visitas.popleft()
+    visitas.append(ahora)
+    return len(visitas) > PETICIONES_POR_MINUTO
+
+
+def bloquear_bots():
+    """Corta las IP que se comportan como bots, antes de hacer cualquier otro
+    trabajo. Los bloqueos vencen solos; `flask --app run desbloquear-ip` los
+    quita antes de tiempo."""
+    ip = ip_solicitante()
+    if request.endpoint == 'static' or not _ip_bloqueable(ip):
+        return
+    if segundos_bloqueo_restante(ip, 'bloqueo_ip') > 0:
+        abort(403)
+
+    if (_PROGRAMAS_DE_ATAQUE.search(request.user_agent.string) or _demasiadas_visitas(ip)):
+        registrar_intento(ip, 'bloqueo_ip')
+        current_app.logger.warning('IP bloqueada por 1 hora: %s', ip)
+        abort(403)
+
+    if _RUTAS_TRAMPA.search(request.path):
+        registrar_intento(ip, 'sondeo')
+        if segundos_bloqueo_restante(ip, 'sondeo') > 0:
+            registrar_intento(ip, 'bloqueo_ip')
+            current_app.logger.warning('IP bloqueada por 1 hora: %s', ip)
+        abort(404)

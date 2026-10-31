@@ -71,3 +71,14 @@ def registrar(app):
             enviar_recordatorio(destino, 'Diyer', hoy, atrasadas)
             click.echo(f'  {i}/7 enviado')
         click.echo(f'Listo: 7 correos de ejemplo enviados a {destino}.')
+
+    @app.cli.command('desbloquear-ip')
+    @click.argument('ip')
+    def desbloquear_ip(ip):
+        """Quita el bloqueo de una IP (por ejemplo, una persona real que
+        quedó bloqueada por compartir conexión con un bot)."""
+        from app.utils.seguridad import limpiar_intentos
+
+        limpiar_intentos(ip, 'bloqueo_ip')
+        limpiar_intentos(ip, 'sondeo')
+        click.echo(f'Listo: la IP {ip} ya no está bloqueada.')
